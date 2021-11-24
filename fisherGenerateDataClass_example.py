@@ -31,8 +31,8 @@ lmax_calc = lmax+lbuffer
 
 expNamesThisNode = numpy.array_split(numpy.asarray(expNames), size)[rank]
 
-classExecDir = 'classExecDir/class_delens/'
-classDataDir = 'classDataDir/CLASS/'
+classExecDir = './CLASS_delens/'
+classDataDir = './CLASS_delens/'
 
 classDataDirThisNode = classDataDir + 'data/Node_' + str(rank) + '/'
 fileBase = 'fisher_8p'
@@ -219,9 +219,6 @@ for k in expNamesThisNode:
                                     polCombsToUse = polCombsToUse, \
                                     spectrumType = 'delensed')
 
-        ############################
-        ## Seems to hang on bcast ##
-        ############################
 
         if rank != size-1 and dCldCLd_lensed is None:
             classDataDirLastNode = classDataDir + 'data/Node_' + str(size-1) + '/'
