@@ -183,7 +183,7 @@ def class_generate_data(cosmo,
     dcode['output'] = 'tCl,pCl,lCl,dlCl'
     dcode['modes'] = 's'
     dcode['lensing'] = 'yes'
-    dcode['non linear'] = 'halofit'
+    dcode['non linear'] = 'hmcode'
     if dcode['non linear'] == 'hmcode' and 'eta_0' in list(cosmo.keys()):
         cosmoclass['eta_0'] = cosmo['eta_0']
     if dcode['non linear'] == 'hmcode' and 'c_min' in list(cosmo.keys()):
