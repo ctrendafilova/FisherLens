@@ -216,6 +216,10 @@ def getPowerDerivWithParams(cosmoFid, stepSizes, polCombs, cmbNoiseSpectraK, def
 
     nParams = len(paramsToDifferentiate)
     oneSidedParams = ['DM_Pann']
+    oneSidedParamsIso = ['c_ad_cdi', 'c_ad_bi', 'c_ad_nid', 'c_ad_niv', \
+                        'c_bi_cdi', 'c_bi_nid', 'c_bi_niv', \
+                        'c_cdi_nid', 'c_cdi_niv', \
+                        'c_nid_niv'] #could be + or - 1
 
     cambPowersPlus = dict()
     cambPowersMinus = dict()
@@ -246,6 +250,12 @@ def getPowerDerivWithParams(cosmoFid, stepSizes, polCombs, cmbNoiseSpectraK, def
         #### For one-sided derivatives, use fiducial parameters for PowersMinus
         if cosmo in oneSidedParams:
             cosmoMinus = cosmoFid.copy()
+        #### isocurvature cross-correlation
+        if cosmo in oneSidedParamsIso:
+            if cosmoFid[cosmo] == 1.:
+                cosmoPlus = cosmoFid.copy()
+            elif cosmoFid[cosmo] == -1.:
+                cosmoMinus = cosmoFid.copy()
 
         if useClass is True:
             cambPowersMinus[cosmo], junk = classWrapTools.class_generate_data(cosmoMinus,
