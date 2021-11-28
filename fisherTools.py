@@ -81,6 +81,112 @@ def fivedDict(names1, names2, names3, names4, names5):
 
 # utilities for calculating Fisher forecasts
 
+def noiseSpectra(l, noiseLevelT, useSqrt2 = True, beamArcmin = 1.4, beamFile = None, noiseLevelP = None):
+#make a full set of noise spectra.
+
+
+    if beamFile == None:
+
+
+        beam_sigma_radians =   (beamArcmin * numpy.pi / (180. * 60.)) / numpy.sqrt(8. * numpy.log(2) )
+
+
+
+        beamPower = numpy.exp(l * (l+1) * beam_sigma_radians**2)
+
+        print('** noiseSpectra: using analytic beam')
+    else:
+        beamVals = numpy.loadtxt(beamFile)
+        beamValsOnL = (scipy.interpolate.interp1d(beamVals[:,0], beamVals[:,1], bounds_error = False))(l)
+
+
+        beamPower = 1/(beamValsOnL**2)
+        print('** noiseSpectra: using beam from file')
+
+    noise_ster = (numpy.pi / (180. * 60))**2 * noiseLevelT**2
+    nl = len(l)
+
+    cl_TT = numpy.empty(nl)
+    cl_TT.fill(noise_ster)
+    cl_TT *= beamPower
+
+
+    cl_EE = numpy.empty(nl)
+    if  useSqrt2:
+        cl_EE.fill(noise_ster * 2.)
+    else:
+        noise_sterP = (numpy.pi / (180. * 60))**2 * noiseLevelP**2
+        cl_EE.fill(noise_sterP)
+    cl_EE *= beamPower
+
+
+    cl_BB = numpy.empty(nl)
+    if  useSqrt2:
+        cl_BB.fill(noise_ster * 2.)
+    else:
+        noise_sterP = (numpy.pi / (180. * 60))**2 * noiseLevelP**2
+        cl_BB.fill(noise_sterP)
+    cl_BB *= beamPower
+
+
+    cl_TE = numpy.empty(nl)
+    cl_TE.fill(0.)
+
+    output = {'l' : l,\
+                  'cl_TT' : cl_TT,\
+                  'cl_EE' : cl_EE,\
+                  'cl_TE' : cl_TE,\
+                  'cl_BB' : cl_BB,
+                  'dl_TT' : cl_TT * l * (l + 1) / 2 / numpy.pi,\
+                  'dl_EE' : cl_EE * l * (l + 1) / 2 / numpy.pi,\
+                  'dl_TE' : cl_TE * l * (l + 1) / 2 / numpy.pi,\
+                  'dl_BB' : cl_BB * l * (l + 1) / 2 / numpy.pi
+              }
+    return output
+
+def getPlanckInvVarNoise(ells, includePol = True):
+    #numbers are taken from "Planck_pol.pdf" from https://cosmo.uchicago.edu/CMB-S4workshops/index.php/File:Planck_pol.pdf
+    freqs = ["30", "44", "70", "100", "143", "217", "353"]
+    nFreqs = len(freqs)
+    fwhmsArcmin = [33., 23., 14., 10., 7., 5., 5.]
+    tempNoisesUKarcmin = [145., 149., 137., 65., 43., 66., 200]
+    polNoisesUKarcmin = [numpy.inf, numpy.inf, 450., 103., 81., 134., 406.]
+
+    cmbNoiseSpectra = onedl(nFreqs)
+
+    #get noise curve for each frequency
+    for f, freq in enumerate(freqs):
+        cmbNoiseSpectra[f] = noiseSpectra(ells, \
+                                                        noiseLevelT = tempNoisesUKarcmin[f], \
+                                                        noiseLevelP = polNoisesUKarcmin[f], \
+                                                        beamArcmin = fwhmsArcmin[f], \
+                                                        useSqrt2 = False)
+
+
+    #now get the result via inverse-variance sum
+    polCombs = list((cmbNoiseSpectra[0]).keys())
+    overallResult = onedDict(polCombs)
+    for pc, polComb in enumerate(polCombs):
+        runningTotal = numpy.zeros(len(ells))
+        for f, freq in enumerate(freqs):
+            runningTotal += 1/cmbNoiseSpectra[f][polComb]
+
+        overallResult[polComb] = 1/runningTotal
+
+    #the ells got messed up as part of the process ... fix this.
+    overallResult['l'] = ells
+
+    if not includePol:
+
+        polCombsPolarization = ['cl_EE', 'cl_TE', 'cl_BB', 'dl_EE', 'dl_TE', 'dl_BB' ]
+        for polComb in polCombsPolarization:
+            overallResult[polComb] = numpy.inf * numpy.ones(len(ells))
+
+    return overallResult
+
+def onedl(rows):
+    return [None] * rows
+
 def getDelensedSpectra(unlensedSpectra, lensedSpectra, cmbNoiseSpectra, lensingSpectra, deflectionNoiseSpectra, \
                            lenspowerDataDir = os.path.dirname(os.path.abspath(__file__)) + '/../data/', lmaxToWrite = 3000, \
                            lenspowerExecDir = os.path.dirname(os.path.abspath(__file__)) + '/../c/', \
@@ -250,6 +356,7 @@ def getPowerDerivWithParams(cosmoFid, stepSizes, polCombs, cmbNoiseSpectraK, def
         #### For one-sided derivatives, use fiducial parameters for PowersMinus
         if cosmo in oneSidedParams:
             cosmoMinus = cosmoFid.copy()
+
         #### isocurvature cross-correlation
         if cosmo in oneSidedParamsIso:
             if cosmoFid[cosmo] == 1.:
