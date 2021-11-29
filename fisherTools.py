@@ -314,7 +314,8 @@ def getPowerDerivWithParams(cosmoFid, stepSizes, polCombs, cmbNoiseSpectraK, def
                             accuracy = 2., wantMatterPower = False, redshifts = None,
                             useClass = False,
                             classExecDir = os.path.dirname(os.path.abspath(__file__)) + '/../../CLASS_delens/',
-                            classDataDir = os.path.dirname(os.path.abspath(__file__)) + '/../../CLASS_delens/'):
+                            classDataDir = os.path.dirname(os.path.abspath(__file__)) + '/../../CLASS_delens/',
+                            extraParams = dict()):
 
     if paramsToDifferentiate == None:
         paramsToDifferentiate = list(cosmoFid.keys())
@@ -348,7 +349,8 @@ def getPowerDerivWithParams(cosmoFid, stepSizes, polCombs, cmbNoiseSpectraK, def
                         deflectionNoise = deflectionNoisesK,
                         classExecDir = classExecDir,
                         classDataDir = classDataDir,
-                        lmax = lmax)
+                        lmax = lmax,
+                        extraParams = extraParams)
         else:
             cambPowersPlus[cosmo] = cambWrapTools.getPyCambPowerSpectra(cosmoPlus, accuracy = accuracy, lmaxToWrite = lmax, wantMatterPower = wantMatterPower, redshifts = redshifts)
 
@@ -371,7 +373,8 @@ def getPowerDerivWithParams(cosmoFid, stepSizes, polCombs, cmbNoiseSpectraK, def
                         deflectionNoise = deflectionNoisesK,
                         classExecDir = classExecDir,
                         classDataDir = classDataDir,
-                        lmax = lmax)
+                        lmax = lmax,
+                        extraParams = extraParams)
         else:
             cambPowersMinus[cosmo] = cambWrapTools.getPyCambPowerSpectra(cosmoMinus, accuracy = accuracy, lmaxToWrite = lmax, wantMatterPower = wantMatterPower, redshifts = redshifts)
 
