@@ -31,6 +31,7 @@ expNamesThisNode = numpy.array_split(numpy.asarray(expNames), size)[rank]
 
 classExecDir = './CLASS_delens/'
 classDataDir = './CLASS_delens/'
+outputDir = classDataDir + 'results/'
 
 classDataDirThisNode = classDataDir + 'data/Node_' + str(rank) + '/'
 fileBase = 'fisher_LCDM'
@@ -38,6 +39,8 @@ fileBaseThisNode = fileBase + '_' + str(rank)
 
 if not os.path.exists(classDataDirThisNode):
     os.makedirs(classDataDirThisNode)
+if not os.path.exists(outputDir):
+    os.makedirs(outputDir)
 
 
 spectrumTypes = ['unlensed', 'lensed', 'delensed', 'lensing']
@@ -156,6 +159,7 @@ for k in expNamesThisNode:
                                          reconstructionMask = reconstructionMask)
 
     paramDerivs[k] = fisherTools.getPowerDerivWithParams(cosmoFid = cosmoFid, \
+                            extraParams = extra_params, \
                             stepSizes = stepSizes, \
                             polCombs = polCombs, \
                             cmbNoiseSpectraK = cmbNoiseSpectra[k], \
@@ -301,7 +305,7 @@ if rank==0:
     forecastData['cosmoParams'] = cosmoParams
 
     print('Node ' + str(rank) + ' saving collected data')
-    filename = '/scratch/users/ctrendafilova/results/' + fileBase + '.pkl'
+    filename = outputDir + fileBase + '.pkl'
     delensedOutput = open(filename, 'wb')
     pickle.dump(forecastData, delensedOutput, -1)
     delensedOutput.close()
