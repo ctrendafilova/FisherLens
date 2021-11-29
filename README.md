@@ -1,5 +1,8 @@
+
+
 FisherLens: Fisher forecasting code for CLASS_delens
 ==============================================
+
 
 This code provides a wrapper for the CLASS_delens code to facilitate Fisher forecasting of cosmological parameter constraints from CMB spectra.
 
@@ -7,6 +10,8 @@ CLASS_delens
 https://github.com/selimhotinli/class_delens
 
 Authors: Selim C. Hotinli, Joel Meyers, Cynthia Trendafilova, Daniel Green, Alexander van Engelen
+
+<img src="./FisherLensLogo.svg" width="200" height = "auto" />
 
 Getting started
 -----------------------------------
