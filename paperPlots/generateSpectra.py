@@ -28,6 +28,8 @@ lmax_calc = lmax+lbuffer
 
 classExecDir = './CLASS_delens/'
 classDataDir = './CLASS_delens/'
+outputDir = classDataDir + 'results/'
+
 classDataDirThisNode = classDataDir + 'data/Node_' + str(rank) + '/'
 
 for k in expNames:
@@ -36,6 +38,8 @@ for k in expNames:
 
     if not os.path.exists(classDataDirThisNode):
         os.makedirs(classDataDirThisNode)
+    if not os.path.exists(outputDir):
+        os.makedirs(outputDir)
 
 
     spectrumTypes = ['unlensed', 'lensed', 'delensed', 'lensing']
@@ -117,7 +121,7 @@ for k in expNames:
 
     print('Node ' + str(rank) + ' saving data')
 
-    filename = '/scratch/users/ctrendafilova/results/' + fileBase + '.pkl'
+    filename = outputDir + fileBase + '.pkl'
     delensedOutput = open(filename, 'wb')
     pickle.dump(forecastData, delensedOutput, -1)
     delensedOutput.close()
