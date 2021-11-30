@@ -2,22 +2,25 @@
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
 
 <svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    id="svg2"
    inkscape:label="Top Layer"
-   sodipodi:docname="Fisher_Delens_Logo_2.svg"
+   sodipodi:docname="FisherLensLogo.svg"
    viewBox="0 0 1946.1 2999.9999"
    version="1.1"
-   inkscape:version="1.1.1 (3bf5ae0d25, 2021-09-20)"
+   inkscape:version="0.92.2 (5c3e80d, 2017-08-06)"
    width="1946.1"
    height="3000"
-   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
-   xmlns:xlink="http://www.w3.org/1999/xlink"
-   xmlns="http://www.w3.org/2000/svg"
-   xmlns:svg="http://www.w3.org/2000/svg"
-   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
-   xmlns:cc="http://creativecommons.org/ns#"
-   xmlns:dc="http://purl.org/dc/elements/1.1/">
+   inkscape:export-filename="/home/jmeyers/Downloads/FisherLensLogo2.png"
+   inkscape:export-xdpi="19.200001"
+   inkscape:export-ydpi="19.200001">
   <defs
      id="defs153">
     <linearGradient
@@ -46,22 +49,22 @@
      id="base"
      bordercolor="#666666"
      inkscape:pageshadow="2"
-     inkscape:window-y="-8"
+     inkscape:window-y="56"
      fit-margin-left="0"
      pagecolor="#ffffff"
      fit-margin-top="0"
      inkscape:window-maximized="1"
      inkscape:zoom="0.24748737"
-     inkscape:window-x="-8"
-     inkscape:window-height="1002"
+     inkscape:window-x="0"
+     inkscape:window-height="1986"
      showgrid="false"
      borderopacity="1.0"
-     inkscape:current-layer="layer3"
-     inkscape:cx="1295.0156"
+     inkscape:current-layer="layer5"
+     inkscape:cx="1274.8125"
      inkscape:cy="1575.838"
      fit-margin-right="0"
      fit-margin-bottom="0"
-     inkscape:window-width="1920"
+     inkscape:window-width="3840"
      inkscape:pageopacity="0"
      inkscape:document-units="px"
      inkscape:pagecheckerboard="0"
@@ -71,6 +74,19 @@
      inkscape:label="Layer"
      inkscape:groupmode="layer"
      transform="translate(977.06,-371.73)">
+    <g
+       inkscape:groupmode="layer"
+       id="layer5"
+       inkscape:label="White_Background">
+      <rect
+         style="opacity:1;fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:7.55905533;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+         id="rect4737"
+         width="1985.4995"
+         height="3032.5684"
+         x="-997.26306"
+         y="357.43475"
+         ry="19.9834" />
+    </g>
     <path
        id="path6748"
        style="fill:#aa4400"
@@ -508,6 +524,7 @@
             <dc:title>Openclipart</dc:title>
           </cc:Agent>
         </dc:publisher>
+        <dc:title></dc:title>
       </cc:Work>
       <cc:License
          rdf:about="http://creativecommons.org/publicdomain/zero/1.0/">
