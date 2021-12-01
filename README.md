@@ -20,9 +20,9 @@ Download and compile the CLASS_delens submodule.
 
 The file fisherGenerateDataClass_example.py will produce a forecast for LambdaCDM + N_eff + m_nu.
 
-Additional python files and Jupyter notebooks can be found under paperPlots; these will replicate the figures from [arXiv number].
+Additional python files and Jupyter notebooks can be found under paperPlots; these will replicate the figures from https://arxiv.org/abs/2111.15036.
 
 Using the code
 -----------------------------------
 
-This code is free to use; please cite [arXiv number] in your publications.
+This code is free to use; please cite https://arxiv.org/abs/2111.15036 in your publications.
