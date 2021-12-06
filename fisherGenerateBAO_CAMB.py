@@ -3,17 +3,9 @@ import cambWrapTools
 import classWrapTools
 import fisherTools
 import pickle
-from mpi4py import MPI
 import scipy
 import numpy
 import os
-
-#MPI
-comm = MPI.COMM_WORLD
-rank = comm.Get_rank()
-size = comm.Get_size()
-
-print(rank, size)
 
 outputDir = './results/'
 if not os.path.exists(outputDir):
