@@ -1013,3 +1013,131 @@ def getBiasVectorNonGaussian(invCovDotParamDerivs, cosmoParams, sysSpectrum, pol
     for cp1, cosmo1 in enumerate(cosmoParams):
         biasVector[cp1] = sum(sysSpectrumStack * invCovDotParamDerivs[cosmo1])
     return biasVector
+
+# CST
+def getClassCAMBHybridDerivs(cosmoFid, stepSizes, polCombs, cmbNoiseSpectraK, deflectionNoisesK,
+                            spectrumTypes = ['unlensed', 'lensed', 'delensed', 'lensing'],
+                            lmax = 5000,
+                            lenspowerDataDir = os.path.dirname(os.path.abspath(__file__)) + '../data',
+                            fileNameBase = 'testing', paramsToDifferentiate = None,
+                            accuracy = 2., wantMatterPower = False, redshifts = None,
+                            useClass = False,
+                            classExecDir = os.path.dirname(os.path.abspath(__file__)) + '/../../CLASS_delens/',
+                            classDataDir = os.path.dirname(os.path.abspath(__file__)) + '/../../CLASS_delens/',
+                            extraParams = dict()):
+
+    if paramsToDifferentiate == None:
+        paramsToDifferentiate = list(cosmoFid.keys())
+
+
+    nParams = len(paramsToDifferentiate)
+    oneSidedParams = ['DM_Pann']
+
+    cambPowersPlus = dict()
+    cambPowersMinus = dict()
+    # delensedPowersFid = dict()
+    delensedPowersPlus = dict()
+    delensedPowersMinus = dict()
+
+
+    for cosmo in paramsToDifferentiate:
+        print(('getting deriv w.r.t. %s' %cosmo))
+        cosmoPlus = cosmoFid.copy() #copy all params including those not being perturbed.
+        cosmoMinus = cosmoFid.copy()
+
+        cosmoPlus[cosmo] = cosmoPlus[cosmo] + stepSizes[cosmo]
+        cosmoMinus[cosmo] = cosmoMinus[cosmo] - stepSizes[cosmo]
+
+        if useClass is True:
+            cambPowersPlus[cosmo], junk = classWrapTools.camb_class_generate_data(cosmoPlus,
+                        rootName = fileNameBase,
+                        cmbNoise = cmbNoiseSpectraK,
+                        deflectionNoise = deflectionNoisesK,
+                        classExecDir = classExecDir,
+                        classDataDir = classDataDir,
+                        lmax = lmax,
+                        extraParams = extraParams)
+        else:
+            cambPowersPlus[cosmo] = cambWrapTools.getPyCambPowerSpectra(cosmoPlus, accuracy = accuracy, lmaxToWrite = lmax, wantMatterPower = wantMatterPower, redshifts = redshifts)
+
+
+        #### For one-sided derivatives, use fiducial parameters for PowersMinus
+        if cosmo in oneSidedParams:
+            cosmoMinus = cosmoFid.copy()
+
+        if useClass is True:
+            cambPowersMinus[cosmo], junk = classWrapTools.camb_class_generate_data(cosmoMinus,
+                        rootName = fileNameBase,
+                        cmbNoise = cmbNoiseSpectraK,
+                        deflectionNoise = deflectionNoisesK,
+                        classExecDir = classExecDir,
+                        classDataDir = classDataDir,
+                        lmax = lmax,
+                        extraParams = extraParams)
+        else:
+            cambPowersMinus[cosmo] = cambWrapTools.getPyCambPowerSpectra(cosmoMinus, accuracy = accuracy, lmaxToWrite = lmax, wantMatterPower = wantMatterPower, redshifts = redshifts)
+
+
+
+        # for k in range(iMin, iMax):
+        if useClass is False:
+            if 'delensed' in spectrumTypes:
+                delensedPowersPlus[cosmo] = \
+                    delensedArrayToDict( getDelensedSpectra(cambPowersPlus[cosmo]['unlensed'], \
+                                                                cambPowersPlus[cosmo]['lensed'], \
+                                                                cmbNoiseSpectraK,\
+                                                                cambPowersPlus[cosmo]['lensing'], \
+                                                                deflectionNoisesK, \
+                                                                lmaxToWrite = lmax, \
+                                                                lenspowerDataDir = lenspowerDataDir, \
+                                                                fileNameBase = fileNameBase) )
+
+                delensedPowersMinus[cosmo] = \
+                    delensedArrayToDict( getDelensedSpectra(cambPowersMinus[cosmo]['unlensed'], \
+                                                                cambPowersMinus[cosmo]['lensed'], \
+                                                                cmbNoiseSpectraK,\
+                                                                cambPowersMinus[cosmo]['lensing'], \
+                                                                deflectionNoisesK, \
+                                                                lmaxToWrite = lmax, \
+                                                                lenspowerDataDir = lenspowerDataDir,\
+                                                                fileNameBase = fileNameBase) )
+
+    #PARAM DERIVATIVES
+    paramDerivs = threedDict(paramsToDifferentiate, spectrumTypes, polCombs)
+
+    for  cosmo in paramsToDifferentiate:
+
+
+        #### Use this for one-sided derivatives (PowersMinus is PowersFid in this case)
+        if cosmo in oneSidedParams:
+            denom = stepSizes[cosmo]
+        else:
+        #### Other parameters use two-sided derivatives
+            denom = 2 * stepSizes[cosmo]
+
+        for pc, polComb in enumerate(polCombs):
+            if 'unlensed' in spectrumTypes:
+                paramDerivs[cosmo]['unlensed'][polComb] = \
+                    (cambPowersPlus[cosmo]['unlensed'][polComb] - cambPowersMinus[cosmo]['unlensed'][polComb]) / denom
+            if 'lensed' in spectrumTypes:
+                paramDerivs[cosmo]['lensed'][polComb] = \
+                    (cambPowersPlus[cosmo]['lensed'][polComb] - cambPowersMinus[cosmo]['lensed'][polComb]) / denom
+            if 'delensed' in spectrumTypes:
+                if useClass is True:
+                    paramDerivs[cosmo]['delensed'][polComb] = \
+                        (cambPowersPlus[cosmo]['delensed'][polComb] - cambPowersMinus[cosmo]['delensed'][polComb]) / denom
+                else:
+                    paramDerivs[cosmo]['delensed'][polComb] = \
+                        (delensedPowersPlus[cosmo][polComb] - delensedPowersMinus[cosmo][polComb]) / denom
+        if 'lensing' in spectrumTypes:
+            paramDerivs[cosmo]['lensing'] = dict()
+            paramDerivs[cosmo]['lensing']['cl_dd'] = \
+                (cambPowersPlus[cosmo]['lensing']['cl_dd'] - cambPowersMinus[cosmo]['lensing']['cl_dd']) / denom
+        if 'matter' in spectrumTypes:
+            paramDerivs[cosmo]['matter'] = dict()
+            paramDerivs[cosmo]['matter']['PK'] = \
+                (cambPowersPlus[cosmo]['matter']['PK'] - cambPowersMinus[cosmo]['matter']['PK']) / denom
+
+
+
+    return paramDerivs

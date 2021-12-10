@@ -54,7 +54,8 @@ def getPyCambPowerSpectra(cosmo, accuracy = 2, lmaxToWrite = None, wantMatterPow
                                    FineS = cosmo['fine_structure_multiplier'] if 'fine_structure_multiplier' in list(cosmo.keys()) else 1.0, \
                                    EMass = cosmo['electron_mass_multiplier'] if 'electron_mass_multiplier' in list(cosmo.keys()) else 1.0)
 
-    pars.set_for_lmax(6000, lens_potential_accuracy = 2 * accuracy, lens_margin = 500, k_eta_fac = 4.)
+    # CST changed this by hand from 6000
+    pars.set_for_lmax(8102, lens_potential_accuracy = 2 * accuracy, lens_margin = 500, k_eta_fac = 4.)
     pars.set_accuracy(AccuracyBoost = accuracy, lSampleBoost = accuracy, lAccuracyBoost = accuracy,)
 
     pars.NonLinear = model.NonLinear_both
