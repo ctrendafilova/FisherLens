@@ -545,63 +545,6 @@ def getDiagonalCovariances(polCombsToUse, powersFidES, cmbNoiseSpectraE = None, 
 
     return covs , invCovs
 
-
-def getGaussianCMBFisher(powersFid, paramDerivs, cmbNoiseSpectra, deflectionNoises, cosmoParams,\
-                            spectrumTypes = ['unlensed', 'lensed', 'delensed'], \
-                            polCombsToUse = ['cl_TT', 'cl_TE', 'cl_EE', 'cl_dd'], \
-                            lmax = 3000):
-
-    covs = getGaussianCov(powersFid = powersFid, \
-                          cmbNoiseSpectra = cmbNoiseSpectra, \
-                          deflectionNoises = deflectionNoises, \
-                          polCombsToUse = polCombsToUse, \
-                          lmax = lmax+1)
-
-    ## Copy data structure of covs to invcovs (values will be overwritten)
-    invCovs = covs.copy()
-    ell = powersFid[list(powersFid.keys())[0]]['l'][:lmax-1]
-    nElls = len(ell)
-    nPolCombsToUse = len(polCombsToUse)
-    nPars = len(cosmoParams)
-    fisherContribs = threedDict(spectrumTypes, cosmoParams, cosmoParams)
-    paramDerivArray = twodDict(cosmoParams, spectrumTypes)
-    fisher = dict()
-
-    for spectrumType in spectrumTypes:
-        fisher[spectrumType] = numpy.zeros((nPars, nPars))
-        for l in range(nElls):
-            try:
-                invCovs[spectrumType][:, :, l] = linalg.inv(covs[spectrumType][:, :, l])
-            except:
-                print("warning, cov inversion problem " , spectrumType, ell[l])
-                invCovs[spectrumType][:, :, l] = numpy.full((nPolCombsToUse, nPolCombsToUse), numpy.nan)
-
-        for cp1, cosmo1 in enumerate(cosmoParams):
-            paramDerivArray[cosmo1][spectrumType] = numpy.zeros((nPolCombsToUse, nElls))
-
-            for pc, polComb in enumerate(polCombsToUse):
-                if polComb == 'cl_dd':
-                    #deflection as a special case; use same data regardless of spectrumType
-                    if 'cl_dd' in polCombsToUse:
-                        pcDD = polCombsToUse.index('cl_dd')
-                        paramDerivArray[cosmo1][spectrumType][pcDD, :] = \
-                            paramDerivs[cosmo1]['lensing']['cl_dd'][:lmax-1]
-                else:
-                    paramDerivArray[cosmo1][spectrumType][pc, :] = \
-                        paramDerivs[cosmo1][spectrumType][polComb][:lmax-1]
-
-
-
-        for cp1, cosmo1 in enumerate(cosmoParams):
-            for cp2, cosmo2 in enumerate(cosmoParams):
-                fisherContribs[spectrumType][cosmo1][cosmo2] = \
-                    numpy.einsum('ik,ijk,jk->k', \
-                               paramDerivArray[cosmo1][spectrumType], invCovs[spectrumType], paramDerivArray[cosmo2][spectrumType])
-
-                fisher[spectrumType][cp1, cp2] = sum(fisherContribs[spectrumType][cosmo1][cosmo2])
-
-    return fisher
-
 def getNonGaussianCov(powersFid, \
                                 cmbNoiseSpectra, \
                                 deflectionNoiseSpectra, \
@@ -703,53 +646,6 @@ def getNonGaussianCov(powersFid, \
 
     return covMatrix
 
-
-
-def choleskyInvCovDotParamDerivsNG(powersFid, \
-                                cmbNoiseSpectra, \
-                                deflectionNoiseSpectra, \
-                                dCldCLd,
-                                paramDerivs, \
-                                cosmoParams, \
-                                dCldCLu = None, \
-                                lmax = 3000, \
-                                polCombsToUse = ['cl_TT', 'cl_TE', 'cl_EE', 'cl_dd'], \
-                                spectrumType = 'delensed'):
-
-    covMatrix = getNonGaussianCov(powersFid = powersFid, \
-                                cmbNoiseSpectra = cmbNoiseSpectra, \
-                                deflectionNoiseSpectra = deflectionNoiseSpectra, \
-                                dCldCLd = dCldCLd, \
-                                dCldCLu = dCldCLu, \
-                                lmax = lmax, \
-                                polCombsToUse = polCombsToUse, \
-                                spectrumType = spectrumType)
-
-    try:
-        covMatrix = scipy.linalg.cho_factor(covMatrix, overwrite_a = True)
-    except:
-        print('Warning Cholesky decomposition failed')
-        covMatrix = scipy.linalg.cho_factor(numpy.eye(len(polCombsToUse)*(lmax-1)))
-
-    paramDerivStack = onedDict(cosmoParams)
-    invCovDotParamDerivs = onedDict(cosmoParams)
-
-    for cosmo in cosmoParams:
-        paramDerivStack[cosmo] = numpy.empty(0)
-        for pc, polComb in enumerate(polCombsToUse):
-            if polComb == 'cl_dd':
-                paramDerivStack[cosmo] = numpy.append(paramDerivStack[cosmo], paramDerivs[cosmo]['lensing'][polComb][:lmax-1])
-            else:
-                paramDerivStack[cosmo] = numpy.append(paramDerivStack[cosmo], paramDerivs[cosmo][spectrumType][polComb][:lmax-1])
-
-        try:
-            invCovDotParamDerivs[cosmo] = scipy.linalg.cho_solve(covMatrix, paramDerivStack[cosmo])
-        except:
-            print('Warning inverse covariance problem with ' + cosmo + ' ' + spectrumType)
-            invCovDotParamDerivs[cosmo] = full((lmax-2), nan)
-
-    return invCovDotParamDerivs, paramDerivStack
-
 def getNonGaussianCMBFisher(invCovDotParamDerivs, paramDerivStack, cosmoParams):
     nParams = len(cosmoParams)
     fisher = numpy.zeros((nParams,nParams))
@@ -769,9 +665,7 @@ def fixParametersInFisher(fisher, cosmoParams, paramsToFix, returnFixedParamList
     else:
         return fixed_fisher
 
-# new methods with \ells
-
-def getGaussianCMBFisherWithElls(powersFid, paramDerivs, cmbNoiseSpectra, deflectionNoises, cosmoParams,\
+def getGaussianCMBFisher(powersFid, paramDerivs, cmbNoiseSpectra, deflectionNoises, cosmoParams,\
                             spectrumTypes = ['unlensed', 'lensed', 'delensed'], \
                             polCombsToUse = ['cl_TT', 'cl_TE', 'cl_EE', 'cl_dd'], \
                             ellsToUse = None, \
@@ -861,7 +755,7 @@ def getGaussianCMBFisherWithElls(powersFid, paramDerivs, cmbNoiseSpectra, deflec
 
     return fisher
 
-def choleskyInvCovDotParamDerivsNGWithElls(powersFid, \
+def choleskyInvCovDotParamDerivsNG(powersFid, \
                                 cmbNoiseSpectra, \
                                 deflectionNoiseSpectra, \
                                 dCldCLd,

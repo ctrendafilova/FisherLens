@@ -243,7 +243,7 @@ for k in expNamesThisNode:
             sysSpectrum[k][spectrumType][polComb] = powersFid_OWLS_AGN[k][spectrumType][polComb] - powersFid[k][spectrumType][polComb]
             sysSpectrum[k][spectrumType][polComb][lmax-1:] = 0
 
-    fisherGaussian[k] = fisherTools.getGaussianCMBFisherWithElls(powersFid = powersFid[k], \
+    fisherGaussian[k] = fisherTools.getGaussianCMBFisher(powersFid = powersFid[k], \
                             paramDerivs = paramDerivs[k], \
                             cmbNoiseSpectra = cmbNoiseSpectra[k], \
                             deflectionNoises = deflectionNoises[k], \
@@ -290,7 +290,7 @@ for k in expNamesThisNode:
             dCldCLu_delensed = None
 
 
-        invCovDotParamDerivs_delensed[k], paramDerivStack_delensed[k] = fisherTools.choleskyInvCovDotParamDerivsNGWithElls(powersFid = powersFid[k], \
+        invCovDotParamDerivs_delensed[k], paramDerivStack_delensed[k] = fisherTools.choleskyInvCovDotParamDerivsNG(powersFid = powersFid[k], \
                                     cmbNoiseSpectra = cmbNoiseSpectra[k], \
                                     deflectionNoiseSpectra = deflectionNoises[k], \
                                     dCldCLd = dCldCLd_delensed,
@@ -322,7 +322,7 @@ for k in expNamesThisNode:
                                                                    dervtype = 'lensed')
 
 
-        invCovDotParamDerivs_lensed[k], paramDerivStack_lensed[k] = fisherTools.choleskyInvCovDotParamDerivsNGWithElls(powersFid = powersFid[k], \
+        invCovDotParamDerivs_lensed[k], paramDerivStack_lensed[k] = fisherTools.choleskyInvCovDotParamDerivsNG(powersFid = powersFid[k], \
                                     cmbNoiseSpectra = cmbNoiseSpectra[k], \
                                     deflectionNoiseSpectra = deflectionNoises[k], \
                                     dCldCLd = dCldCLd_lensed,

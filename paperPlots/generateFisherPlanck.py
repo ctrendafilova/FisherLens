@@ -165,7 +165,7 @@ for k in expNames:
                             classExecDir = classExecDir, \
                             classDataDir = classDataDirThisNode)
 
-    fisherGaussian[k] = fisherTools.getGaussianCMBFisherWithElls(powersFid = powersFid[k], \
+    fisherGaussian[k] = fisherTools.getGaussianCMBFisher(powersFid = powersFid[k], \
                             paramDerivs = paramDerivs[k], \
                             cmbNoiseSpectra = cmbNoiseSpectra[k], \
                             deflectionNoises = deflectionNoises[k], \
@@ -202,7 +202,7 @@ for k in expNames:
             dCldCLu_delensed = None
 
 
-        invCovDotParamDerivs_delensed[k], paramDerivStack_delensed[k] = fisherTools.choleskyInvCovDotParamDerivsNGWithElls(powersFid = powersFid[k], \
+        invCovDotParamDerivs_delensed[k], paramDerivStack_delensed[k] = fisherTools.choleskyInvCovDotParamDerivsNG(powersFid = powersFid[k], \
                                     cmbNoiseSpectra = cmbNoiseSpectra[k], \
                                     deflectionNoiseSpectra = deflectionNoises[k], \
                                     dCldCLd = dCldCLd_delensed,
@@ -232,7 +232,7 @@ for k in expNames:
                                                                    classDataDir = classDataDirLastNode,
                                                                    dervtype = 'lensed')
 
-        invCovDotParamDerivs_lensed[k], paramDerivStack_lensed[k] = fisherTools.choleskyInvCovDotParamDerivsNGWithElls(powersFid = powersFid[k], \
+        invCovDotParamDerivs_lensed[k], paramDerivStack_lensed[k] = fisherTools.choleskyInvCovDotParamDerivsNG(powersFid = powersFid[k], \
                                     cmbNoiseSpectra = cmbNoiseSpectra[k], \
                                     deflectionNoiseSpectra = deflectionNoises[k], \
                                     dCldCLd = dCldCLd_lensed,
