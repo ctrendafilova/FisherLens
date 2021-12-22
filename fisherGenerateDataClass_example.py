@@ -46,10 +46,7 @@ if not os.path.exists(outputDir):
 
 
 spectrumTypes = ['unlensed', 'lensed', 'delensed', 'lensing']
-polCombs = ['cl_TT', 'cl_TE', 'cl_EE']
-#polCombs = ['cl_TT', 'cl_TE', 'cl_EE', 'cl_BB']
-polCombsToUse = ['cl_TT', 'cl_TE', 'cl_EE', 'cl_dd']
-#polCombsToUse = ['cl_TT', 'cl_TE', 'cl_EE', 'cl_BB', 'cl_dd']
+polCombs = ['cl_TT', 'cl_TE', 'cl_EE', 'cl_dd']
 
 #######################################################################################3
 #LOAD PARAMS AND GET POWER SPECTRA
@@ -181,7 +178,7 @@ for k in expNamesThisNode:
                             deflectionNoises = deflectionNoises[k], \
                             cosmoParams = cosmoParams, \
                             spectrumTypes = ['unlensed', 'lensed', 'delensed'], \
-                            polCombsToUse = polCombsToUse, \
+                            polCombsToUse = polCombs, \
                             ellsToUse = ellsToUse)
 
     if doNonGaussian:
@@ -220,7 +217,7 @@ for k in expNamesThisNode:
                                     cosmoParams = cosmoParams, \
                                     dCldCLu = dCldCLu_delensed, \
                                     ellsToUse = ellsToUseNG, \
-                                    polCombsToUse = polCombsToUse, \
+                                    polCombsToUse = polCombs, \
                                     spectrumType = 'delensed')
 
 
@@ -248,7 +245,7 @@ for k in expNamesThisNode:
                                     cosmoParams = cosmoParams, \
                                     dCldCLu = dCldCLu_lensed,
                                     ellsToUse = ellsToUseNG, \
-                                    polCombsToUse = polCombsToUse, \
+                                    polCombsToUse = polCombs, \
                                     spectrumType = 'lensed')
 
         fisherNonGaussian_delensed[k] = fisherTools.getNonGaussianCMBFisher(invCovDotParamDerivs = invCovDotParamDerivs_delensed[k], \

@@ -296,7 +296,11 @@ def getPowerDerivWithParams(cosmoFid, stepSizes, polCombs, cmbNoiseSpectraK, def
                                                                 fileNameBase = fileNameBase) )
 
     #PARAM DERIVATIVES
-    paramDerivs = threedDict(paramsToDifferentiate, spectrumTypes, polCombs)
+    polCombsTemp = polCombs.copy()
+    if 'cl_dd' in polCombs:
+        polCombsTemp.remove('cl_dd')
+        
+    paramDerivs = threedDict(paramsToDifferentiate, spectrumTypes, polCombsTemp)
 
     for  cosmo in paramsToDifferentiate:
 
@@ -309,29 +313,27 @@ def getPowerDerivWithParams(cosmoFid, stepSizes, polCombs, cmbNoiseSpectraK, def
             denom = 2 * stepSizes[cosmo]
 
         for pc, polComb in enumerate(polCombs):
-            if 'unlensed' in spectrumTypes:
-                paramDerivs[cosmo]['unlensed'][polComb] = \
-                    (cambPowersPlus[cosmo]['unlensed'][polComb] - cambPowersMinus[cosmo]['unlensed'][polComb]) / denom
-            if 'lensed' in spectrumTypes:
-                paramDerivs[cosmo]['lensed'][polComb] = \
-                    (cambPowersPlus[cosmo]['lensed'][polComb] - cambPowersMinus[cosmo]['lensed'][polComb]) / denom
-            if 'delensed' in spectrumTypes:
-                if useClass is True:
-                    paramDerivs[cosmo]['delensed'][polComb] = \
-                        (cambPowersPlus[cosmo]['delensed'][polComb] - cambPowersMinus[cosmo]['delensed'][polComb]) / denom
+            if polComb == 'cl_dd':
+                if 'lensing' in spectrumTypes:
+                    paramDerivs[cosmo]['lensing'] = dict()
+                    paramDerivs[cosmo]['lensing']['cl_dd'] = \
+                        (cambPowersPlus[cosmo]['lensing']['cl_dd'] - cambPowersMinus[cosmo]['lensing']['cl_dd']) / denom
                 else:
-                    paramDerivs[cosmo]['delensed'][polComb] = \
-                        (delensedPowersPlus[cosmo][polComb] - delensedPowersMinus[cosmo][polComb]) / denom
-        if 'lensing' in spectrumTypes:
-            paramDerivs[cosmo]['lensing'] = dict()
-            paramDerivs[cosmo]['lensing']['cl_dd'] = \
-                (cambPowersPlus[cosmo]['lensing']['cl_dd'] - cambPowersMinus[cosmo]['lensing']['cl_dd']) / denom
-        if 'matter' in spectrumTypes:
-            paramDerivs[cosmo]['matter'] = dict()
-            paramDerivs[cosmo]['matter']['PK'] = \
-                (cambPowersPlus[cosmo]['matter']['PK'] - cambPowersMinus[cosmo]['matter']['PK']) / denom
-
-
+                    print('lensing must be in spectrum types to calculate cl_dd derivatives.')
+            else:
+                if 'unlensed' in spectrumTypes:
+                    paramDerivs[cosmo]['unlensed'][polComb] = \
+                        (cambPowersPlus[cosmo]['unlensed'][polComb] - cambPowersMinus[cosmo]['unlensed'][polComb]) / denom
+                if 'lensed' in spectrumTypes:
+                    paramDerivs[cosmo]['lensed'][polComb] = \
+                        (cambPowersPlus[cosmo]['lensed'][polComb] - cambPowersMinus[cosmo]['lensed'][polComb]) / denom
+                if 'delensed' in spectrumTypes:
+                    if useClass is True:
+                        paramDerivs[cosmo]['delensed'][polComb] = \
+                            (cambPowersPlus[cosmo]['delensed'][polComb] - cambPowersMinus[cosmo]['delensed'][polComb]) / denom
+                    else:
+                        paramDerivs[cosmo]['delensed'][polComb] = \
+                            (delensedPowersPlus[cosmo][polComb] - delensedPowersMinus[cosmo][polComb]) / denom
 
     return paramDerivs
 
