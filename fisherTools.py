@@ -591,9 +591,14 @@ def getNonGaussianCov(powersFid, \
         for pc2, polComb2 in enumerate(polCombsToUse):
             if pc2 <= pc1:
                 print('Computing covaraince for ', polComb1, ' and ', polComb2)
-
-                cov[polComb1][polComb2] += numpy.tensordot(dCldCLd[polComb1][2:lmax+1,2:lmax+1], \
-                                            numpy.tensordot(numpy.diag(deflCov), dCldCLd[polComb2][2:lmax+1,2:lmax+1], axes = (1,1)), axes = (1,0))
+                
+                if polComb1 == 'cl_dd' and polComb2 == 'cl_dd':
+                    ## Avoid double counting on-diagonal covariance for deflection power
+                    cov[polComb1][polComb2] += 0.
+                    
+                else:
+                    cov[polComb1][polComb2] += numpy.tensordot(dCldCLd[polComb1][2:lmax+1,2:lmax+1], \
+                                                numpy.tensordot(numpy.diag(deflCov), dCldCLd[polComb2][2:lmax+1,2:lmax+1], axes = (1,1)), axes = (1,0))
 
                 if dCldCLu is not None:
                     for pc3, polComb3 in enumerate(polCombsToUse):
