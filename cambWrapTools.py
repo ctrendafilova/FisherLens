@@ -37,7 +37,7 @@ def getPyCambPowerSpectra(cosmo, accuracy = 2, lmaxToWrite = None, wantMatterPow
         H0 = None
         theta_s = None
 
-    pars.set_cosmology(H0 = H0, cosmomc_theta = theta_s, ombh2 = cosmo['omega_b_h2'], \
+    pars.set_cosmology(H0 = H0, thetastar = theta_s, ombh2 = cosmo['omega_b_h2'], \
                                 omch2 = cosmo['omega_c_h2'], mnu = cosmo['mnu'], tau = cosmo['tau'],
                                 nnu = cosmo['N_eff'] if 'N_eff' in list(cosmo.keys()) else 3.046, YHe = Yhe, \
                                 omk = cosmo['omk'] if 'omk' in list(cosmo.keys()) else 0.0)
