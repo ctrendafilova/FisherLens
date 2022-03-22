@@ -3,17 +3,22 @@ import cambWrapTools
 import classWrapTools
 import fisherTools
 import pickle
-from mpi4py import MPI
 import scipy
 import numpy
 import os
 
 import copy
 
+useMPI = True
 #MPI
-comm = MPI.COMM_WORLD
-rank = comm.Get_rank()
-size = comm.Get_size()
+if useMPI:
+    from mpi4py import MPI
+    comm = MPI.COMM_WORLD
+    rank = comm.Get_rank()
+    size = comm.Get_size()
+else:
+    rank = 0
+    size = 1
 
 print(rank, size)
 
@@ -289,7 +294,8 @@ pickle.dump(forecastData, delensedOutput, -1)
 delensedOutput.close()
 print('Node ' + str(rank) + ' saving data complete')
 
-comm.Barrier()
+if useMPI:
+    comm.Barrier()
 
 if rank==0:
     print('Node ' + str(rank) + ' collecting data')
