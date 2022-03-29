@@ -188,22 +188,11 @@ def onedl(rows):
     return [None] * rows
 
 
-
-def delensedArrayToDict(inArr):
-
-    ell = 2. + arange(inArr.shape[0])*1.
-    return {'l' : ell, \
-                'cl_TT' : inArr[:, 0], \
-                'cl_EE' : inArr[:, 1], \
-                'cl_TE' : inArr[:, 2], \
-                'cl_BB' : inArr[:, 3]}
-
 def getPowerDerivWithParams(cosmoFid, stepSizes, polCombs, cmbNoiseSpectraK, deflectionNoisesK,
                             spectrumTypes = ['unlensed', 'lensed', 'delensed', 'lensing'],
                             lmax = 5000,
-                            lenspowerDataDir = os.path.dirname(os.path.abspath(__file__)) + '../data',
                             fileNameBase = 'testing', paramsToDifferentiate = None,
-                            accuracy = 2., wantMatterPower = False, redshifts = None,
+                            accuracy = 2.,
                             useClass = False,
                             classExecDir = os.path.dirname(os.path.abspath(__file__)) + '/../../CLASS_delens/',
                             classDataDir = os.path.dirname(os.path.abspath(__file__)) + '/../../CLASS_delens/',
@@ -220,10 +209,8 @@ def getPowerDerivWithParams(cosmoFid, stepSizes, polCombs, cmbNoiseSpectraK, def
                         'c_cdi_nid', 'c_cdi_niv', \
                         'c_nid_niv'] #could be + or - 1
 
-    cambPowersPlus = dict()
-    cambPowersMinus = dict()
-    delensedPowersPlus = dict()
-    delensedPowersMinus = dict()
+    powersPlus = dict()
+    powersMinus = dict()
 
 
     for cosmo in paramsToDifferentiate:
@@ -235,7 +222,7 @@ def getPowerDerivWithParams(cosmoFid, stepSizes, polCombs, cmbNoiseSpectraK, def
         cosmoMinus[cosmo] = cosmoMinus[cosmo] - stepSizes[cosmo]
 
         if useClass is True:
-            cambPowersPlus[cosmo], junk = classWrapTools.class_generate_data(cosmoPlus,
+            powersPlus[cosmo], junk = classWrapTools.class_generate_data(cosmoPlus,
                         rootName = fileNameBase,
                         cmbNoise = cmbNoiseSpectraK,
                         deflectionNoise = deflectionNoisesK,
@@ -244,7 +231,15 @@ def getPowerDerivWithParams(cosmoFid, stepSizes, polCombs, cmbNoiseSpectraK, def
                         lmax = lmax,
                         extraParams = extraParams)
         else:
-            cambPowersPlus[cosmo] = cambWrapTools.getPyCambPowerSpectra(cosmoPlus, accuracy = accuracy, lmaxToWrite = lmax, wantMatterPower = wantMatterPower, redshifts = redshifts)
+            powersPlus[cosmo], junk = classWrapTools.camb_class_generate_data(cosmoPlus,
+                        rootName = fileNameBase,
+                        cmbNoise = cmbNoiseSpectraK,
+                        deflectionNoise = deflectionNoisesK,
+                        classExecDir = classExecDir,
+                        classDataDir = classDataDir,
+                        lmax = lmax,
+                        extraParams = extraParams,
+                        accuracy = accuracy)
 
 
         #### For one-sided derivatives, use fiducial parameters for PowersMinus
@@ -259,7 +254,7 @@ def getPowerDerivWithParams(cosmoFid, stepSizes, polCombs, cmbNoiseSpectraK, def
                 cosmoMinus = cosmoFid.copy()
 
         if useClass is True:
-            cambPowersMinus[cosmo], junk = classWrapTools.class_generate_data(cosmoMinus,
+            powersMinus[cosmo], junk = classWrapTools.class_generate_data(cosmoMinus,
                         rootName = fileNameBase,
                         cmbNoise = cmbNoiseSpectraK,
                         deflectionNoise = deflectionNoisesK,
@@ -268,35 +263,23 @@ def getPowerDerivWithParams(cosmoFid, stepSizes, polCombs, cmbNoiseSpectraK, def
                         lmax = lmax,
                         extraParams = extraParams)
         else:
-            cambPowersMinus[cosmo] = cambWrapTools.getPyCambPowerSpectra(cosmoMinus, accuracy = accuracy, lmaxToWrite = lmax, wantMatterPower = wantMatterPower, redshifts = redshifts)
+            powersMinus[cosmo], junk = classWrapTools.camb_class_generate_data(cosmoMinus,
+                        rootName = fileNameBase,
+                        cmbNoise = cmbNoiseSpectraK,
+                        deflectionNoise = deflectionNoisesK,
+                        classExecDir = classExecDir,
+                        classDataDir = classDataDir,
+                        lmax = lmax,
+                        extraParams = extraParams,
+                        accuracy = accuracy)
 
-
-
-        # for k in range(iMin, iMax):
-        if useClass is False:
-            if 'delensed' in spectrumTypes:
-                delensedPowersPlus[cosmo] = \
-                    delensedArrayToDict( getDelensedSpectra(cambPowersPlus[cosmo]['unlensed'], \
-                                                                cambPowersPlus[cosmo]['lensed'], \
-                                                                cmbNoiseSpectraK,\
-                                                                cambPowersPlus[cosmo]['lensing'], \
-                                                                deflectionNoisesK, \
-                                                                lmaxToWrite = lmax, \
-                                                                lenspowerDataDir = lenspowerDataDir, \
-                                                                fileNameBase = fileNameBase) )
-
-                delensedPowersMinus[cosmo] = \
-                    delensedArrayToDict( getDelensedSpectra(cambPowersMinus[cosmo]['unlensed'], \
-                                                                cambPowersMinus[cosmo]['lensed'], \
-                                                                cmbNoiseSpectraK,\
-                                                                cambPowersMinus[cosmo]['lensing'], \
-                                                                deflectionNoisesK, \
-                                                                lmaxToWrite = lmax, \
-                                                                lenspowerDataDir = lenspowerDataDir,\
-                                                                fileNameBase = fileNameBase) )
 
     #PARAM DERIVATIVES
-    paramDerivs = threedDict(paramsToDifferentiate, spectrumTypes, polCombs)
+    polCombsTemp = polCombs.copy()
+    if 'cl_dd' in polCombs:
+        polCombsTemp.remove('cl_dd')
+
+    paramDerivs = threedDict(paramsToDifferentiate, spectrumTypes, polCombsTemp)
 
     for  cosmo in paramsToDifferentiate:
 
@@ -309,29 +292,23 @@ def getPowerDerivWithParams(cosmoFid, stepSizes, polCombs, cmbNoiseSpectraK, def
             denom = 2 * stepSizes[cosmo]
 
         for pc, polComb in enumerate(polCombs):
-            if 'unlensed' in spectrumTypes:
-                paramDerivs[cosmo]['unlensed'][polComb] = \
-                    (cambPowersPlus[cosmo]['unlensed'][polComb] - cambPowersMinus[cosmo]['unlensed'][polComb]) / denom
-            if 'lensed' in spectrumTypes:
-                paramDerivs[cosmo]['lensed'][polComb] = \
-                    (cambPowersPlus[cosmo]['lensed'][polComb] - cambPowersMinus[cosmo]['lensed'][polComb]) / denom
-            if 'delensed' in spectrumTypes:
-                if useClass is True:
-                    paramDerivs[cosmo]['delensed'][polComb] = \
-                        (cambPowersPlus[cosmo]['delensed'][polComb] - cambPowersMinus[cosmo]['delensed'][polComb]) / denom
+            if polComb == 'cl_dd':
+                if 'lensing' in spectrumTypes:
+                    paramDerivs[cosmo]['lensing'] = dict()
+                    paramDerivs[cosmo]['lensing']['cl_dd'] = \
+                        (powersPlus[cosmo]['lensing']['cl_dd'] - powersMinus[cosmo]['lensing']['cl_dd']) / denom
                 else:
+                    print('lensing must be in spectrum types to calculate cl_dd derivatives.')
+            else:
+                if 'unlensed' in spectrumTypes:
+                    paramDerivs[cosmo]['unlensed'][polComb] = \
+                        (powersPlus[cosmo]['unlensed'][polComb] - powersMinus[cosmo]['unlensed'][polComb]) / denom
+                if 'lensed' in spectrumTypes:
+                    paramDerivs[cosmo]['lensed'][polComb] = \
+                        (powersPlus[cosmo]['lensed'][polComb] - powersMinus[cosmo]['lensed'][polComb]) / denom
+                if 'delensed' in spectrumTypes:
                     paramDerivs[cosmo]['delensed'][polComb] = \
-                        (delensedPowersPlus[cosmo][polComb] - delensedPowersMinus[cosmo][polComb]) / denom
-        if 'lensing' in spectrumTypes:
-            paramDerivs[cosmo]['lensing'] = dict()
-            paramDerivs[cosmo]['lensing']['cl_dd'] = \
-                (cambPowersPlus[cosmo]['lensing']['cl_dd'] - cambPowersMinus[cosmo]['lensing']['cl_dd']) / denom
-        if 'matter' in spectrumTypes:
-            paramDerivs[cosmo]['matter'] = dict()
-            paramDerivs[cosmo]['matter']['PK'] = \
-                (cambPowersPlus[cosmo]['matter']['PK'] - cambPowersMinus[cosmo]['matter']['PK']) / denom
-
-
+                        (powersPlus[cosmo]['delensed'][polComb] - powersMinus[cosmo]['delensed'][polComb]) / denom
 
     return paramDerivs
 
@@ -373,7 +350,51 @@ def getParamDerivsBAOandH0(cosmoFid, stepSizes, redshifts, paramsToDifferentiate
 
     return paramDerivs
 
+def getSecondDerivsBAOandH0(cosmoFid, stepSizes, redshifts, paramsToDifferentiate = None):
+    externalData = ['BAO', 'H0']
+    derivsPlus = dict()
+    derivsMinus = dict()
+    if paramsToDifferentiate == None:
+        paramsToDifferentiate = list(cosmoFid.keys())
+    nParams = len(paramsToDifferentiate)
+    oneSidedParams = ['DM_Pann']
+    for cosmo in paramsToDifferentiate:
+        print('getting second deriv w.r.t. %s' %cosmo)
+        cosmoPlus = cosmoFid.copy() #copy all params including those not being perturbed.
+        cosmoMinus = cosmoFid.copy()
 
+        cosmoPlus[cosmo] = cosmoPlus[cosmo] + stepSizes[cosmo]
+        cosmoMinus[cosmo] = cosmoMinus[cosmo] - stepSizes[cosmo]
+
+        derivsPlus[cosmo] = getParamDerivsBAOandH0(cosmoPlus, stepSizes, redshifts, paramsToDifferentiate)
+
+
+        #### For one-sided derivatives, use fiducial parameters for PowersMinus
+        if cosmo in oneSidedParams:
+            cosmoMinus = cosmoFid.copy()
+
+        derivsMinus[cosmo] = getParamDerivsBAOandH0(cosmoMinus, stepSizes, redshifts, paramsToDifferentiate)
+
+
+    #PARAM DERIVATIVES
+    secondDerivs = threedDict(paramsToDifferentiate, paramsToDifferentiate, externalData)
+
+    for  cosmo1 in paramsToDifferentiate:
+
+
+        #### Use this for one-sided derivatives (derivsMinus is derivsFid in this case)
+        if cosmo1 in oneSidedParams:
+            denom = stepSizes[cosmo1]
+        else:
+        #### Other parameters use two-sided derivatives
+            denom = 2 * stepSizes[cosmo1]
+
+        for cosmo2 in paramsToDifferentiate:
+            for ed, exData in enumerate(externalData):
+                secondDerivs[cosmo1][cosmo2][exData] = \
+                    (derivsPlus[cosmo1][cosmo2][exData] - derivsMinus[cosmo1][cosmo2][exData]) / denom
+
+    return secondDerivs
 
 
 def getGaussianCov(powersFid, cmbNoiseSpectra, deflectionNoises, \
@@ -591,9 +612,16 @@ def getNonGaussianCov(powersFid, \
         for pc2, polComb2 in enumerate(polCombsToUse):
             if pc2 <= pc1:
                 print('Computing covaraince for ', polComb1, ' and ', polComb2)
+                # old - troubleshooting
+                # cov[polComb1][polComb2] += numpy.tensordot(dCldCLd[polComb1][2:lmax+1,2:lmax+1], \
+                #                             numpy.tensordot(numpy.diag(deflCov), dCldCLd[polComb2][2:lmax+1,2:lmax+1], axes = (1,1)), axes = (1,0))
+                if polComb1 == 'cl_dd' and polComb2 == 'cl_dd':
+                    ## Avoid double counting on-diagonal covariance for deflection power
+                    cov[polComb1][polComb2] += 0.
 
-                cov[polComb1][polComb2] += numpy.tensordot(dCldCLd[polComb1][2:lmax+1,2:lmax+1], \
-                                            numpy.tensordot(numpy.diag(deflCov), dCldCLd[polComb2][2:lmax+1,2:lmax+1], axes = (1,1)), axes = (1,0))
+                else:
+                    cov[polComb1][polComb2] += numpy.tensordot(dCldCLd[polComb1][2:lmax+1,2:lmax+1], \
+                                                numpy.tensordot(numpy.diag(deflCov), dCldCLd[polComb2][2:lmax+1,2:lmax+1], axes = (1,1)), axes = (1,0))
 
                 if dCldCLu is not None:
                     for pc3, polComb3 in enumerate(polCombsToUse):
@@ -665,41 +693,15 @@ def fixParametersInFisher(fisher, cosmoParams, paramsToFix, returnFixedParamList
     else:
         return fixed_fisher
 
-# new methods with \ells
-
 def getGaussianCMBFisher(powersFid, paramDerivs, cmbNoiseSpectra, deflectionNoises, cosmoParams,\
                             spectrumTypes = ['unlensed', 'lensed', 'delensed'], \
                             polCombsToUse = ['cl_TT', 'cl_TE', 'cl_EE', 'cl_dd'], \
                             ellsToUse = None, \
                             lmax = None):
 
-    if ellsToUse is not None and lmax is not None:
-        # give an error
-        raise ValueError("User passed both ellsToUse and lmax.")
-    elif ellsToUse is not None and lmax is None:
-        print('Using ellsToUse passed by user.')
-        lmax = 2
-    elif ellsToUse is None and lmax is not None:
-        print('Generating ellsToUse from lmax passed by user.')
-        ellsToUse = {'cl_TT': [2, lmax], 'cl_TE': [2, lmax], 'cl_EE': [2, lmax], 'cl_BB': [2, lmax], 'cl_dd': [2, lmax]}
-    else:
-        print('Using default values for ellsToUse.')
-        ellsToUse = {'cl_TT': [2, 5000], 'cl_TE': [2, 5000], 'cl_EE': [2, 5000], 'cl_BB': [2,5000], 'cl_dd': [2, 5000]}
-        lmax = 5000
-
-    for polComb in polCombsToUse:
-        if polComb not in list(ellsToUse.keys()):
-            # give an error
-            raise ValueError(polComb + " is not in ellsToUse.")
-
-    for polComb in list(ellsToUse.keys()):
-        # check that lmins are at least 2; otherwise set to 2
-        if ellsToUse[polComb][0] < 2:
-            print('Setting lmin for ' + polComb + ' to 2.')
-            ellsToUse[polComb][0] = 2
-        # pick out the largest lmax
-        if ellsToUse[polComb][1] > lmax:
-            lmax = ellsToUse[polComb][1]
+    ellsToUse, lmax = createEllsToUseDict(ellsToUse = ellsToUse, \
+                        lmax = lmax, \
+                        polCombsToUse = polCombsToUse)
 
     covs = getGaussianCov(powersFid = powersFid, \
                           cmbNoiseSpectra = cmbNoiseSpectra, \
@@ -769,33 +771,9 @@ def choleskyInvCovDotParamDerivsNG(powersFid, \
                                 polCombsToUse = ['cl_TT', 'cl_TE', 'cl_EE', 'cl_dd'], \
                                 spectrumType = 'delensed'):
 
-    if ellsToUse is not None and lmax is not None:
-        # give an error
-        raise ValueError("User passed both ellsToUse and lmax.")
-    elif ellsToUse is not None and lmax is None:
-        print('Using ellsToUse passed by user.')
-        lmax = 2
-    elif ellsToUse is None and lmax is not None:
-        print('Generating ellsToUse from lmax passed by user.')
-        ellsToUse = {'cl_TT': [2, lmax], 'cl_TE': [2, lmax], 'cl_EE': [2, lmax], 'cl_BB': [2,lmax], 'cl_dd': [2, lmax], 'lmaxCov': lmax}
-    else:
-        print('Using default values for ellsToUse.')
-        ellsToUse = {'cl_TT': [2, 5000], 'cl_TE': [2, 5000], 'cl_EE': [2, 5000], 'cl_BB': [2,5000], 'cl_dd': [2, 5000], 'lmaxCov': 5000}
-        lmax = 5000
-
-    for polComb in polCombsToUse:
-        if polComb not in list(ellsToUse.keys()):
-            # give an error
-            raise ValueError(polComb + " is not in ellsToUse.")
-
-    for polComb in [x for x in list(ellsToUse.keys()) if x != 'lmaxCov']:
-        # check that lmins are at least 2; otherwise set to 2
-        if ellsToUse[polComb][0] < 2:
-            print('Setting lmin for ' + polComb + ' to 2.')
-            ellsToUse[polComb][0] = 2
-        # pick out the largest lmax
-        if ellsToUse[polComb][1] > lmax:
-            lmax = ellsToUse[polComb][1]
+    ellsToUse, lmax = createEllsToUseDict(ellsToUse = ellsToUse, \
+                        lmax = lmax, \
+                        polCombsToUse = polCombsToUse)
     if 'lmaxCov' in list(ellsToUse.keys()) and ellsToUse['lmaxCov'] > lmax:
         lmax = ellsToUse['lmaxCov']
 
@@ -910,13 +888,11 @@ def getBiasVectorNonGaussian(invCovDotParamDerivs, cosmoParams, sysSpectrum, pol
         biasVector[cp1] = sum(sysSpectrumStack * invCovDotParamDerivs[cosmo1])
     return biasVector
 
-# CST
-def getClassCAMBHybridDerivs(cosmoFid, stepSizes, polCombs, cmbNoiseSpectraK, deflectionNoisesK,
+def getSecondPowerDerivWithParams(cosmoFid, stepSizes, polCombs, cmbNoiseSpectraK, deflectionNoisesK,
                             spectrumTypes = ['unlensed', 'lensed', 'delensed', 'lensing'],
                             lmax = 5000,
-                            lenspowerDataDir = os.path.dirname(os.path.abspath(__file__)) + '../data',
                             fileNameBase = 'testing', paramsToDifferentiate = None,
-                            accuracy = 2., wantMatterPower = False, redshifts = None,
+                            accuracy = 2.,
                             useClass = False,
                             classExecDir = os.path.dirname(os.path.abspath(__file__)) + '/../../CLASS_delens/',
                             classDataDir = os.path.dirname(os.path.abspath(__file__)) + '/../../CLASS_delens/',
@@ -929,111 +905,278 @@ def getClassCAMBHybridDerivs(cosmoFid, stepSizes, polCombs, cmbNoiseSpectraK, de
     nParams = len(paramsToDifferentiate)
     oneSidedParams = ['DM_Pann']
 
-    cambPowersPlus = dict()
-    cambPowersMinus = dict()
-    # delensedPowersFid = dict()
-    delensedPowersPlus = dict()
-    delensedPowersMinus = dict()
-
+    derivsPlus = dict()
+    derivsMinus = dict()
 
     for cosmo in paramsToDifferentiate:
-        print(('getting deriv w.r.t. %s' %cosmo))
+        print('getting second deriv w.r.t. %s' %cosmo)
         cosmoPlus = cosmoFid.copy() #copy all params including those not being perturbed.
         cosmoMinus = cosmoFid.copy()
 
         cosmoPlus[cosmo] = cosmoPlus[cosmo] + stepSizes[cosmo]
         cosmoMinus[cosmo] = cosmoMinus[cosmo] - stepSizes[cosmo]
 
-        if useClass is True:
-            cambPowersPlus[cosmo], junk = classWrapTools.camb_class_generate_data(cosmoPlus,
-                        rootName = fileNameBase,
-                        cmbNoise = cmbNoiseSpectraK,
-                        deflectionNoise = deflectionNoisesK,
+        derivsPlus[cosmo] = getPowerDerivWithParams(cosmoPlus, stepSizes, polCombs, cmbNoiseSpectraK, deflectionNoisesK,
+                        spectrumTypes = spectrumTypes,
+                        lmax = lmax,
+                        fileNameBase = fileNameBase,
+                        paramsToDifferentiate = paramsToDifferentiate,
+                        accuracy = accuracy,
+                        useClass = useClass,
                         classExecDir = classExecDir,
                         classDataDir = classDataDir,
-                        lmax = lmax,
                         extraParams = extraParams)
-        else:
-            cambPowersPlus[cosmo] = cambWrapTools.getPyCambPowerSpectra(cosmoPlus, accuracy = accuracy, lmaxToWrite = lmax, wantMatterPower = wantMatterPower, redshifts = redshifts)
 
 
         #### For one-sided derivatives, use fiducial parameters for PowersMinus
         if cosmo in oneSidedParams:
             cosmoMinus = cosmoFid.copy()
 
-        if useClass is True:
-            cambPowersMinus[cosmo], junk = classWrapTools.camb_class_generate_data(cosmoMinus,
-                        rootName = fileNameBase,
-                        cmbNoise = cmbNoiseSpectraK,
-                        deflectionNoise = deflectionNoisesK,
+        derivsMinus[cosmo] = getPowerDerivWithParams(cosmoMinus, stepSizes, polCombs, cmbNoiseSpectraK, deflectionNoisesK,
+                        spectrumTypes = spectrumTypes,
+                        lmax = lmax,
+                        fileNameBase = fileNameBase,
+                        paramsToDifferentiate = paramsToDifferentiate,
+                        accuracy = accuracy,
+                        useClass = useClass,
                         classExecDir = classExecDir,
                         classDataDir = classDataDir,
-                        lmax = lmax,
                         extraParams = extraParams)
-        else:
-            cambPowersMinus[cosmo] = cambWrapTools.getPyCambPowerSpectra(cosmoMinus, accuracy = accuracy, lmaxToWrite = lmax, wantMatterPower = wantMatterPower, redshifts = redshifts)
 
-
-
-        # for k in range(iMin, iMax):
-        if useClass is False:
-            if 'delensed' in spectrumTypes:
-                delensedPowersPlus[cosmo] = \
-                    delensedArrayToDict( getDelensedSpectra(cambPowersPlus[cosmo]['unlensed'], \
-                                                                cambPowersPlus[cosmo]['lensed'], \
-                                                                cmbNoiseSpectraK,\
-                                                                cambPowersPlus[cosmo]['lensing'], \
-                                                                deflectionNoisesK, \
-                                                                lmaxToWrite = lmax, \
-                                                                lenspowerDataDir = lenspowerDataDir, \
-                                                                fileNameBase = fileNameBase) )
-
-                delensedPowersMinus[cosmo] = \
-                    delensedArrayToDict( getDelensedSpectra(cambPowersMinus[cosmo]['unlensed'], \
-                                                                cambPowersMinus[cosmo]['lensed'], \
-                                                                cmbNoiseSpectraK,\
-                                                                cambPowersMinus[cosmo]['lensing'], \
-                                                                deflectionNoisesK, \
-                                                                lmaxToWrite = lmax, \
-                                                                lenspowerDataDir = lenspowerDataDir,\
-                                                                fileNameBase = fileNameBase) )
 
     #PARAM DERIVATIVES
-    paramDerivs = threedDict(paramsToDifferentiate, spectrumTypes, polCombs)
+    secondDerivs = fourdDict(paramsToDifferentiate, paramsToDifferentiate, spectrumTypes, polCombs)
 
-    for  cosmo in paramsToDifferentiate:
+    for  cosmo1 in paramsToDifferentiate:
 
 
-        #### Use this for one-sided derivatives (PowersMinus is PowersFid in this case)
-        if cosmo in oneSidedParams:
-            denom = stepSizes[cosmo]
+        #### Use this for one-sided derivatives (derivsMinus is derivsFid in this case)
+        if cosmo1 in oneSidedParams:
+            denom = stepSizes[cosmo1]
         else:
         #### Other parameters use two-sided derivatives
-            denom = 2 * stepSizes[cosmo]
+            denom = 2 * stepSizes[cosmo1]
 
-        for pc, polComb in enumerate(polCombs):
-            if 'unlensed' in spectrumTypes:
-                paramDerivs[cosmo]['unlensed'][polComb] = \
-                    (cambPowersPlus[cosmo]['unlensed'][polComb] - cambPowersMinus[cosmo]['unlensed'][polComb]) / denom
-            if 'lensed' in spectrumTypes:
-                paramDerivs[cosmo]['lensed'][polComb] = \
-                    (cambPowersPlus[cosmo]['lensed'][polComb] - cambPowersMinus[cosmo]['lensed'][polComb]) / denom
-            if 'delensed' in spectrumTypes:
-                if useClass is True:
-                    paramDerivs[cosmo]['delensed'][polComb] = \
-                        (cambPowersPlus[cosmo]['delensed'][polComb] - cambPowersMinus[cosmo]['delensed'][polComb]) / denom
+        for cosmo2 in paramsToDifferentiate:
+            for pc, polComb in enumerate(polCombs):
+                if 'unlensed' in spectrumTypes:
+                    secondDerivs[cosmo1][cosmo2]['unlensed'][polComb] = \
+                        (derivsPlus[cosmo1][cosmo2]['unlensed'][polComb] - derivsMinus[cosmo1][cosmo2]['unlensed'][polComb]) / denom
+                if 'lensed' in spectrumTypes:
+                    secondDerivs[cosmo1][cosmo2]['lensed'][polComb] = \
+                        (derivsPlus[cosmo1][cosmo2]['lensed'][polComb] - derivsMinus[cosmo1][cosmo2]['lensed'][polComb]) / denom
+                if 'delensed' in spectrumTypes:
+                    secondDerivs[cosmo1][cosmo2]['delensed'][polComb] = \
+                        (derivsPlus[cosmo1][cosmo2]['delensed'][polComb] - derivsMinus[cosmo1][cosmo2]['delensed'][polComb]) / denom
+            if 'lensing' in spectrumTypes:
+                secondDerivs[cosmo1][cosmo2]['lensing'] = dict()
+                secondDerivs[cosmo1][cosmo2]['lensing']['cl_dd'] = \
+                    (derivsPlus[cosmo1][cosmo2]['lensing']['cl_dd'] - derivsMinus[cosmo1][cosmo2]['lensing']['cl_dd']) / denom
+
+    return secondDerivs
+
+def getGaussianDoubletDALI(powersFid, paramDerivs, secondDerivs, cmbNoiseSpectra, deflectionNoises, cosmoParams,\
+                            spectrumTypes = ['unlensed', 'lensed', 'delensed'], \
+                            polCombsToUse = ['cl_TT', 'cl_TE', 'cl_EE', 'cl_dd'], \
+                            ellsToUse = None, \
+                            lmax = None):
+
+    ellsToUse, lmax = createEllsToUseDict(ellsToUse = ellsToUse, \
+                        lmax = lmax, \
+                        polCombsToUse = polCombsToUse)
+
+    covs = getGaussianCov(powersFid = powersFid, \
+                          cmbNoiseSpectra = cmbNoiseSpectra, \
+                          deflectionNoises = deflectionNoises, \
+                          polCombsToUse = polCombsToUse, \
+                          lmax = lmax+1)
+
+    ## Copy data structure of covs to invcovs (values will be overwritten)
+    invCovs = covs.copy()
+    #ell = powersFid['unlensed']['l']
+    ell = powersFid[list(powersFid.keys())[0]]['l'][:lmax-1]
+    nElls = len(ell)
+    nPolCombsToUse = len(polCombsToUse)
+    nPars = len(cosmoParams)
+    DALI3Contribs = fourdDict(spectrumTypes, cosmoParams, cosmoParams, cosmoParams)
+    DALI4Contribs = fivedDict(spectrumTypes, cosmoParams, cosmoParams, cosmoParams, cosmoParams)
+    paramDerivArray = twodDict(cosmoParams, spectrumTypes)
+    paramDerivToUse = twodDict(cosmoParams, spectrumTypes)
+    secondDerivArray = threedDict(cosmoParams, cosmoParams, spectrumTypes)
+    secondDerivToUse = threedDict(cosmoParams, cosmoParams, spectrumTypes)
+    DALI3 = dict()
+    DALI4 = dict()
+
+    for spectrumType in spectrumTypes:
+        DALI3[spectrumType] = numpy.zeros((nPars, nPars, nPars))
+        DALI4[spectrumType] = numpy.zeros((nPars, nPars, nPars, nPars))
+        for l in range(nElls):
+            try:
+                invCovs[spectrumType][:, :, l] = linalg.inv(covs[spectrumType][:, :, l])
+            except:
+                print("warning, cov inversion problem " , spectrumType, ell[l])
+                invCovs[spectrumType][:, :, l] = numpy.full((nPolCombsToUse, nPolCombsToUse), numpy.nan)
+
+        for cp1, cosmo1 in enumerate(cosmoParams):
+            paramDerivArray[cosmo1][spectrumType] = numpy.zeros((nPolCombsToUse, nElls))
+            paramDerivToUse[cosmo1][spectrumType] = numpy.zeros((nPolCombsToUse, nElls))
+
+            for pc, polComb in enumerate(polCombsToUse):
+                if polComb == 'cl_dd':
+                    #deflection as a special case; use same data regardless of spectrumType
+                    if 'cl_dd' in polCombsToUse:
+                        pcDD = polCombsToUse.index('cl_dd')
+                        paramDerivArray[cosmo1][spectrumType][pcDD, :] = \
+                            paramDerivs[cosmo1]['lensing']['cl_dd'][:lmax-1]
                 else:
-                    paramDerivs[cosmo]['delensed'][polComb] = \
-                        (delensedPowersPlus[cosmo][polComb] - delensedPowersMinus[cosmo][polComb]) / denom
-        if 'lensing' in spectrumTypes:
-            paramDerivs[cosmo]['lensing'] = dict()
-            paramDerivs[cosmo]['lensing']['cl_dd'] = \
-                (cambPowersPlus[cosmo]['lensing']['cl_dd'] - cambPowersMinus[cosmo]['lensing']['cl_dd']) / denom
-        if 'matter' in spectrumTypes:
-            paramDerivs[cosmo]['matter'] = dict()
-            paramDerivs[cosmo]['matter']['PK'] = \
-                (cambPowersPlus[cosmo]['matter']['PK'] - cambPowersMinus[cosmo]['matter']['PK']) / denom
+                    paramDerivArray[cosmo1][spectrumType][pc, :] = \
+                        paramDerivs[cosmo1][spectrumType][polComb][:lmax-1]
+                paramDerivToUse[cosmo1][spectrumType][pc, ellsToUse[polComb][0]-2 : ellsToUse[polComb][1]-1] = 1.
+                paramDerivArray[cosmo1][spectrumType][pc, :] = \
+                    paramDerivArray[cosmo1][spectrumType][pc, :] * paramDerivToUse[cosmo1][spectrumType][pc, :]
+
+            for cp2, cosmo2 in enumerate(cosmoParams):
+                secondDerivArray[cosmo1][cosmo2][spectrumType] = numpy.zeros((nPolCombsToUse, nElls))
+                secondDerivToUse[cosmo1][cosmo2][spectrumType] = numpy.zeros((nPolCombsToUse, nElls))
+
+                for pc, polComb in enumerate(polCombsToUse):
+                    if polComb == 'cl_dd':
+                        #deflection as a special case; use same data regardless of spectrumType
+                        if 'cl_dd' in polCombsToUse:
+                            pcDD = polCombsToUse.index('cl_dd')
+                            secondDerivArray[cosmo1][cosmo2][spectrumType][pcDD, :] = \
+                                secondDerivs[cosmo1][cosmo2]['lensing']['cl_dd'][:lmax-1]
+                    else:
+                        secondDerivArray[cosmo1][cosmo2][spectrumType][pc, :] = \
+                            secondDerivs[cosmo1][cosmo2][spectrumType][polComb][:lmax-1]
+                    secondDerivToUse[cosmo1][cosmo2][spectrumType][pc, ellsToUse[polComb][0]-2 : ellsToUse[polComb][1]-1] = 1.
+                    secondDerivArray[cosmo1][cosmo2][spectrumType][pc, :] = \
+                        secondDerivArray[cosmo1][cosmo2][spectrumType][pc, :] * secondDerivToUse[cosmo1][cosmo2][spectrumType][pc, :]
 
 
 
-    return paramDerivs
+        for cp1, cosmo1 in enumerate(cosmoParams):
+            for cp2, cosmo2 in enumerate(cosmoParams):
+                for cp3, cosmo3 in enumerate(cosmoParams):
+                    DALI3Contribs[spectrumType][cosmo1][cosmo2][cosmo3] = \
+                        numpy.einsum('ik,ijk,jk->k', \
+                                   secondDerivArray[cosmo1][cosmo2][spectrumType], invCovs[spectrumType], paramDerivArray[cosmo3][spectrumType])
+
+                    DALI3[spectrumType][cp1, cp2, cp3] = sum(DALI3Contribs[spectrumType][cosmo1][cosmo2][cosmo3])
+
+                    for cp4, cosmo4 in enumerate(cosmoParams):
+                        DALI4Contribs[spectrumType][cosmo1][cosmo2][cosmo3][cosmo4] = \
+                            numpy.einsum('ik,ijk,jk->k', \
+                                       secondDerivArray[cosmo1][cosmo2][spectrumType], invCovs[spectrumType], secondDerivArray[cosmo3][cosmo4][spectrumType])
+
+                        DALI4[spectrumType][cp1, cp2, cp3, cp4] = sum(DALI4Contribs[spectrumType][cosmo1][cosmo2][cosmo3][cosmo4])
+
+    return DALI3, DALI4
+
+
+def choleskyInvCovDotSecondDerivsNG(powersFid, \
+                                cmbNoiseSpectra, \
+                                deflectionNoiseSpectra, \
+                                dCldCLd,
+                                paramDerivs, \
+                                secondDerivs,
+                                cosmoParams, \
+                                dCldCLu = None, \
+                                ellsToUse = None, \
+                                lmax = None, \
+                                polCombsToUse = ['cl_TT', 'cl_TE', 'cl_EE', 'cl_dd'], \
+                                spectrumType = 'delensed'):
+
+    ellsToUse, lmax = createEllsToUseDict(ellsToUse = ellsToUse, \
+                        lmax = lmax, \
+                        polCombsToUse = polCombsToUse)
+    if 'lmaxCov' in list(ellsToUse.keys()) and ellsToUse['lmaxCov'] > lmax:
+        lmax = ellsToUse['lmaxCov']
+
+    covMatrix = getNonGaussianCov(powersFid = powersFid, \
+                                cmbNoiseSpectra = cmbNoiseSpectra, \
+                                deflectionNoiseSpectra = deflectionNoiseSpectra, \
+                                dCldCLd = dCldCLd, \
+                                #includeUnlensedSpectraDerivatives = includeUnlensedSpectraDerivatives, \
+                                dCldCLu = dCldCLu, \
+                                lmax = lmax, \
+                                polCombsToUse = polCombsToUse, \
+                                spectrumType = spectrumType)
+
+    try:
+        covMatrix = scipy.linalg.cho_factor(covMatrix, overwrite_a = True)
+    except:
+        print('Warning Cholesky decomposition failed')
+        #covMatrix = scipy.linalg.cho_factor(numpy.eye(len(polCombsToUse)*(lmax-2)))
+        covMatrix = scipy.linalg.cho_factor(numpy.eye(len(polCombsToUse)*(lmax-1)))
+
+    secondDerivStack = twodDict(cosmoParams, cosmoParams)
+    invCovDotSecondDerivs = twodDict(cosmoParams, cosmoParams)
+
+    for cosmo1 in cosmoParams:
+        for cosmo2 in cosmoParams:
+            secondDerivStack[cosmo1][cosmo2] = numpy.empty(0)
+            for pc, polComb in enumerate(polCombsToUse):
+                secondDerivTemp = numpy.zeros(lmax-1)
+                secondDerivTemp[ellsToUse[polComb][0]-2 : ellsToUse[polComb][1]-1] = 1.
+                if polComb == 'cl_dd':
+                    secondDerivStack[cosmo1][cosmo2] = numpy.append(secondDerivStack[cosmo1][cosmo2], secondDerivTemp * secondDerivs[cosmo1][cosmo2]['lensing'][polComb][:lmax-1])
+                    #paramDerivStack[cosmo] = numpy.append(paramDerivStack[cosmo], paramDerivs[cosmo]['lensing'][polComb][:lmax-2])
+                else:
+                    secondDerivStack[cosmo1][cosmo2] = numpy.append(secondDerivStack[cosmo1][cosmo2], secondDerivTemp * secondDerivs[cosmo1][cosmo2][spectrumType][polComb][:lmax-1])
+                    #paramDerivStack[cosmo] = numpy.append(paramDerivStack[cosmo], paramDerivs[cosmo][spectrumType][polComb][:lmax-2])
+
+            try:
+                invCovDotSecondDerivs[cosmo1][cosmo2] = scipy.linalg.cho_solve(covMatrix, secondDerivStack[cosmo1][cosmo2])
+            except:
+                print('Warning inverse covariance problem with ' + cosmo1 + ' ' + cosmo2 + ' ' + spectrumType)
+                #invCovDotParamDerivs[cosmo] = full(len(polCombsToUse)*(lmax-1), nan)
+                invCovDotSecondDerivs[cosmo] = full((lmax-2), nan)
+
+    return invCovDotSecondDerivs, secondDerivStack
+
+def getNonGaussianDoubletDALI(invCovDotParamDerivs, invCovDotSecondDerivs, secondDerivStack, cosmoParams):
+    nParams = len(cosmoParams)
+    DALI3 = numpy.zeros((nParams,nParams,nParams))
+    DALI4 = numpy.zeros((nParams,nParams,nParams,nParams))
+    for cp1, cosmo1 in enumerate(cosmoParams):
+        for cp2, cosmo2 in enumerate(cosmoParams):
+            for cp3, cosmo3 in enumerate(cosmoParams):
+                DALI3[cp1, cp2, cp3] = sum(secondDerivStack[cosmo1][cosmo2] * invCovDotParamDerivs[cosmo3])
+                for cp4, cosmo4 in enumerate(cosmoParams):
+                    DALI4[cp1, cp2, cp3, cp4] = sum(secondDerivStack[cosmo1][cosmo2] * invCovDotSecondDerivs[cosmo3][cosmo4])
+    return DALI3, DALI4
+
+def createEllsToUseDict(ellsToUse = None, \
+                        lmax = None, \
+                        polCombsToUse = ['cl_TT', 'cl_TE', 'cl_EE', 'cl_dd']):
+
+    if ellsToUse is not None and lmax is not None:
+        # give an error
+        raise ValueError("User passed both ellsToUse and lmax.")
+    elif ellsToUse is not None and lmax is None:
+        print('Using ellsToUse passed by user.')
+        lmax = 2
+    elif ellsToUse is None and lmax is not None:
+        print('Generating ellsToUse from lmax passed by user.')
+        ellsToUse = {'cl_TT': [2, lmax], 'cl_TE': [2, lmax], 'cl_EE': [2, lmax], 'cl_BB': [2,lmax], 'cl_dd': [2, lmax], 'lmaxCov': lmax}
+    else:
+        print('Using default values for ellsToUse.')
+        ellsToUse = {'cl_TT': [2, 5000], 'cl_TE': [2, 5000], 'cl_EE': [2, 5000], 'cl_BB': [2,5000], 'cl_dd': [2, 5000], 'lmaxCov': 5000}
+        lmax = 5000
+
+    for polComb in polCombsToUse:
+        if polComb not in list(ellsToUse.keys()):
+            # give an error
+            raise ValueError(polComb + " is not in ellsToUse.")
+
+    for polComb in [x for x in list(ellsToUse.keys()) if x != 'lmaxCov']:
+        # check that lmins are at least 2; otherwise set to 2
+        if ellsToUse[polComb][0] < 2:
+            print('Setting lmin for ' + polComb + ' to 2.')
+            ellsToUse[polComb][0] = 2
+        # pick out the largest lmax
+        if ellsToUse[polComb][1] > lmax:
+            lmax = ellsToUse[polComb][1]
+
+    return ellsToUse, lmax

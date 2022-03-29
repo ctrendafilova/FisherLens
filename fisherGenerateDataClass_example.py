@@ -3,21 +3,27 @@ import cambWrapTools
 import classWrapTools
 import fisherTools
 import pickle
-from mpi4py import MPI
 import scipy
 import numpy
 import os
 
 import copy
 
+useMPI = True
 #MPI
-comm = MPI.COMM_WORLD
-rank = comm.Get_rank()
-size = comm.Get_size()
+if useMPI:
+    from mpi4py import MPI
+    comm = MPI.COMM_WORLD
+    rank = comm.Get_rank()
+    size = comm.Get_size()
+else:
+    rank = 0
+    size = 1
 
 print(rank, size)
 
 ###  Set of experiments  ###
+# Results will be indexed by experiment number, starting from 0
 expNames = list(range(20))
 nExps = len(expNames)
 lmax = 5000
@@ -31,11 +37,14 @@ lmax_calc = lmax+lbuffer
 
 expNamesThisNode = numpy.array_split(numpy.asarray(expNames), size)[rank]
 
+# Directory where CLASS_delens is located
 classExecDir = './CLASS_delens/'
+# Directory where you would like the output
 classDataDir = './CLASS_delens/'
 outputDir = classDataDir + 'results/'
 
 classDataDirThisNode = classDataDir + 'data/Node_' + str(rank) + '/'
+# Base name to use for all output files
 fileBase = 'fisher_8p'
 fileBaseThisNode = fileBase + '_' + str(rank)
 
@@ -44,12 +53,9 @@ if not os.path.exists(classDataDirThisNode):
 if not os.path.exists(outputDir):
     os.makedirs(outputDir)
 
-
+# Spectrum types and polarizations to include
 spectrumTypes = ['unlensed', 'lensed', 'delensed', 'lensing']
-polCombs = ['cl_TT', 'cl_TE', 'cl_EE']
-#polCombs = ['cl_TT', 'cl_TE', 'cl_EE', 'cl_BB']
-polCombsToUse = ['cl_TT', 'cl_TE', 'cl_EE', 'cl_dd']
-#polCombsToUse = ['cl_TT', 'cl_TE', 'cl_EE', 'cl_BB', 'cl_dd']
+polCombs = ['cl_TT', 'cl_TE', 'cl_EE', 'cl_dd']
 
 #######################################################################################3
 #LOAD PARAMS AND GET POWER SPECTRA
@@ -85,6 +91,8 @@ cosmoParams = list(cosmoFid.keys())
 delta_l_max = 2000
 ell = numpy.arange(2,lmax_calc+1+delta_l_max)
 
+# Mask the \ells you do not want included in lensing reconstruction
+# Keys can be added as e.g. 'lmin_T', 'lmax_T', etc.
 reconstructionMask = dict()
 reconstructionMask['lmax_T'] = 3000
 
@@ -94,6 +102,7 @@ extra_params = dict()
 #extra_params['write warnings'] = 'y'
 extra_params['delta_l_max'] = delta_l_max
 
+# Specify \ells to keep when performing Fisher matrix sum
 ellsToUse = {'cl_TT': [lmin, lmaxTT], 'cl_TE': [lmin, lmax], 'cl_EE': [lmin, lmax], 'cl_dd': [2, lmax]}
 ellsToUseNG = {'cl_TT': [lmin, lmaxTT], 'cl_TE': [lmin, lmax], 'cl_EE': [lmin, lmax], 'cl_dd': [2, lmax], 'lmaxCov': lmax_calc}
 
@@ -109,8 +118,11 @@ fisherGaussian = dict()
 fisherNonGaussian_delensed = dict()
 fisherNonGaussian_lensed = dict()
 
+# Flags for whether to include NonGaussian covariances, and derivatives wrt unlensed spectra
 doNonGaussian = True
 includeUnlensedSpectraDerivatives = True
+
+# Calculations begin
 
 ### Assign task of computing lensed NG covariance to last node       ###
 ### This is chosen because last node sometimes has fewer experiments ###
@@ -181,7 +193,7 @@ for k in expNamesThisNode:
                             deflectionNoises = deflectionNoises[k], \
                             cosmoParams = cosmoParams, \
                             spectrumTypes = ['unlensed', 'lensed', 'delensed'], \
-                            polCombsToUse = polCombsToUse, \
+                            polCombsToUse = polCombs, \
                             ellsToUse = ellsToUse)
 
     if doNonGaussian:
@@ -220,7 +232,7 @@ for k in expNamesThisNode:
                                     cosmoParams = cosmoParams, \
                                     dCldCLu = dCldCLu_delensed, \
                                     ellsToUse = ellsToUseNG, \
-                                    polCombsToUse = polCombsToUse, \
+                                    polCombsToUse = polCombs, \
                                     spectrumType = 'delensed')
 
 
@@ -248,7 +260,7 @@ for k in expNamesThisNode:
                                     cosmoParams = cosmoParams, \
                                     dCldCLu = dCldCLu_lensed,
                                     ellsToUse = ellsToUseNG, \
-                                    polCombsToUse = polCombsToUse, \
+                                    polCombsToUse = polCombs, \
                                     spectrumType = 'lensed')
 
         fisherNonGaussian_delensed[k] = fisherTools.getNonGaussianCMBFisher(invCovDotParamDerivs = invCovDotParamDerivs_delensed[k], \
@@ -282,7 +294,8 @@ pickle.dump(forecastData, delensedOutput, -1)
 delensedOutput.close()
 print('Node ' + str(rank) + ' saving data complete')
 
-comm.Barrier()
+if useMPI:
+    comm.Barrier()
 
 if rank==0:
     print('Node ' + str(rank) + ' collecting data')

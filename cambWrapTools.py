@@ -7,8 +7,7 @@ from camb import model, initialpower
 
 TCMB = 2.7255
 
-def getPyCambPowerSpectra(cosmo, accuracy = 2, lmaxToWrite = None, wantMatterPower = False, \
-                              redshifts = None):
+def getPyCambPowerSpectra(cosmo, accuracy = 2, lmaxToWrite = None):
 
     lmax = lmaxToWrite + 1 if lmaxToWrite>0 else None
 
@@ -63,11 +62,6 @@ def getPyCambPowerSpectra(cosmo, accuracy = 2, lmaxToWrite = None, wantMatterPow
     if 'w' in list(cosmo.keys()):
         pars.set_dark_energy(w = cosmo['w'])
 
-
-    if redshifts != None and wantMatterPower:
-        pars.set_matter_power(redshifts=redshifts)
-
-        # camb.set_z_outputs(redshifts)
     #calculate results for these parameter
     results = camb.get_results(pars)
 
@@ -138,14 +132,6 @@ def getPyCambPowerSpectra(cosmo, accuracy = 2, lmaxToWrite = None, wantMatterPow
 
     output = {'unlensed' : unlensed, 'lensed' : lensed, 'lensing' : lensing}
 
-    if wantMatterPower:
-
-
-        matter = dict()
-        matter['kh'], matter['zs'], matter['PK'] = results.get_matter_power_spectrum()
-
-        output['matter'] = matter
-
     return output
 
 
@@ -201,7 +187,7 @@ def get_H0_from_theta(cosmo):
         H0 = None
         theta_s = None
 
-    pars.set_cosmology(H0 = H0, cosmomc_theta = theta_s, ombh2 = cosmo['omega_b_h2'], \
+    pars.set_cosmology(H0 = H0, thetastar = theta_s, ombh2 = cosmo['omega_b_h2'], \
                                 omch2 = cosmo['omega_c_h2'], mnu = cosmo['mnu'], tau = cosmo['tau'],
                                 nnu = cosmo['N_eff'] if 'N_eff' in list(cosmo.keys()) else 3.046, YHe = Yhe, \
                                 omk = cosmo['omk'] if 'omk' in list(cosmo.keys()) else 0.0)
@@ -235,7 +221,7 @@ def getBAOParams(cosmo, redshifts):
     else:
         H0 = None
         theta_s = None
-    pars.set_cosmology(H0 = H0, cosmomc_theta = theta_s, ombh2 = cosmo['omega_b_h2'], \
+    pars.set_cosmology(H0 = H0, thetastar = theta_s, ombh2 = cosmo['omega_b_h2'], \
                             omch2 = cosmo['omega_c_h2'], mnu = cosmo['mnu'], tau = cosmo['tau'],
                             nnu = cosmo['N_eff'] if 'N_eff' in list(cosmo.keys()) else 3.046, YHe = Yhe, \
                             omk = cosmo['omk'] if 'omk' in list(cosmo.keys()) else 0.0)
