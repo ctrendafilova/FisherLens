@@ -7,8 +7,7 @@ from camb import model, initialpower
 
 TCMB = 2.7255
 
-def getPyCambPowerSpectra(cosmo, accuracy = 2, lmaxToWrite = None, wantMatterPower = False, \
-                              redshifts = None):
+def getPyCambPowerSpectra(cosmo, accuracy = 2, lmaxToWrite = None):
 
     lmax = lmaxToWrite + 1 if lmaxToWrite>0 else None
 
@@ -54,7 +53,8 @@ def getPyCambPowerSpectra(cosmo, accuracy = 2, lmaxToWrite = None, wantMatterPow
                                    FineS = cosmo['fine_structure_multiplier'] if 'fine_structure_multiplier' in list(cosmo.keys()) else 1.0, \
                                    EMass = cosmo['electron_mass_multiplier'] if 'electron_mass_multiplier' in list(cosmo.keys()) else 1.0)
 
-    pars.set_for_lmax(6000, lens_potential_accuracy = 2 * accuracy, lens_margin = 500, k_eta_fac = 4.)
+    # CST changed this by hand from 6000
+    pars.set_for_lmax(8102, lens_potential_accuracy = 2 * accuracy, lens_margin = 500, k_eta_fac = 4.)
     pars.set_accuracy(AccuracyBoost = accuracy, lSampleBoost = accuracy, lAccuracyBoost = accuracy,)
 
     pars.NonLinear = model.NonLinear_both
@@ -62,11 +62,6 @@ def getPyCambPowerSpectra(cosmo, accuracy = 2, lmaxToWrite = None, wantMatterPow
     if 'w' in list(cosmo.keys()):
         pars.set_dark_energy(w = cosmo['w'])
 
-
-    if redshifts != None and wantMatterPower:
-        pars.set_matter_power(redshifts=redshifts)
-
-        # camb.set_z_outputs(redshifts)
     #calculate results for these parameter
     results = camb.get_results(pars)
 
@@ -136,14 +131,6 @@ def getPyCambPowerSpectra(cosmo, accuracy = 2, lmaxToWrite = None, wantMatterPow
     print(pars.H0)
 
     output = {'unlensed' : unlensed, 'lensed' : lensed, 'lensing' : lensing}
-
-    if wantMatterPower:
-
-
-        matter = dict()
-        matter['kh'], matter['zs'], matter['PK'] = results.get_matter_power_spectrum()
-
-        output['matter'] = matter
 
     return output
 

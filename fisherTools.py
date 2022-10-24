@@ -188,16 +188,6 @@ def onedl(rows):
     return [None] * rows
 
 
-
-def delensedArrayToDict(inArr):
-
-    ell = 2. + arange(inArr.shape[0])*1.
-    return {'l' : ell, \
-                'cl_TT' : inArr[:, 0], \
-                'cl_EE' : inArr[:, 1], \
-                'cl_TE' : inArr[:, 2], \
-                'cl_BB' : inArr[:, 3]}
-
 def getPowerDerivWithParams(cosmoFid, stepSizes, polCombs, cmbNoiseSpectraK, deflectionNoisesK,
                             spectrumTypes = ['unlensed', 'lensed', 'delensed', 'lensing'],
                             lmax = 5000,
@@ -299,7 +289,7 @@ def getPowerDerivWithParams(cosmoFid, stepSizes, polCombs, cmbNoiseSpectraK, def
     polCombsTemp = polCombs.copy()
     if 'cl_dd' in polCombs:
         polCombsTemp.remove('cl_dd')
-        
+
     paramDerivs = threedDict(paramsToDifferentiate, spectrumTypes, polCombsTemp)
 
     for  cosmo in paramsToDifferentiate:
@@ -593,11 +583,11 @@ def getNonGaussianCov(powersFid, \
         for pc2, polComb2 in enumerate(polCombsToUse):
             if pc2 <= pc1:
                 print('Computing covaraince for ', polComb1, ' and ', polComb2)
-                
+
                 if polComb1 == 'cl_dd' and polComb2 == 'cl_dd':
                     ## Avoid double counting on-diagonal covariance for deflection power
                     cov[polComb1][polComb2] += 0.
-                    
+
                 else:
                     cov[polComb1][polComb2] += numpy.tensordot(dCldCLd[polComb1][2:lmax+1,2:lmax+1], \
                                                 numpy.tensordot(numpy.diag(deflCov), dCldCLd[polComb2][2:lmax+1,2:lmax+1], axes = (1,1)), axes = (1,0))
