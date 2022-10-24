@@ -1,5 +1,6 @@
 import os
 import numpy as np
+import cambWrapTools
 
 TCMB = 2.7255  ## CMB temperature in K
 
@@ -51,6 +52,9 @@ def class_generate_data(cosmo,
         cosmoclass['ln10^{10}A_s'] = cosmo['logA']
     cosmoclass['n_s'] = cosmo['n_s']
     cosmoclass['tau_reio'] = cosmo['tau']
+    #omega_k
+    if 'omk' in list(cosmo.keys()):
+        cosmoclass['Omega_k'] = cosmo['omk']
 
     ## CLASS treats 'ur' species differently from 'ncdm' species
     ## With one massive neutrino eigenstate, 'N_ur' is 2.0328 to make N_eff 3.046
@@ -540,6 +544,155 @@ def class_generate_data(cosmo,
 
 
     return output
+
+# CST
+def camb_class_generate_data(cosmo,
+                        rootName = 'testing',
+                        cmbNoise = None,
+                        noiseLevel = 1.,
+                        beamSizeArcmin = 1.,
+                        deflectionNoise = None,
+                        externalUnlensedCMBSpectra = None,
+                        externalLensedCMBSpectra = None,
+                        externalLensingSpectra = None,
+                        classExecDir = os.path.dirname(os.path.abspath(__file__)) + '/CLASS_delens/',
+                        classDataDir = os.path.dirname(os.path.abspath(__file__)) + '/CLASS_delens/',
+                        calculateDerivatives = False,
+                        includeUnlensedSpectraDerivatives = False,
+                        outputAllReconstructions = False,
+                        reconstructionMask = None,
+                        lmax = 5000,
+                        extraParams = dict(),
+                        accuracy = 2):
+
+    cambPowerSpectra = cambWrapTools.getPyCambPowerSpectra(cosmo = cosmo, \
+                                                    accuracy = accuracy, \
+                                                    lmaxToWrite = lmax+3000)
+
+    if calculateDerivatives == False:
+        powersFid, deflectionNoises = class_generate_data(cosmo = cosmo,
+                                                        rootName = rootName,
+                                                        cmbNoise = cmbNoise,
+                                                        noiseLevel = noiseLevel,
+                                                        beamSizeArcmin = beamSizeArcmin,
+                                                        deflectionNoise = deflectionNoise,
+                                                        externalUnlensedCMBSpectra = externalUnlensedCMBSpectra,
+                                                        externalLensedCMBSpectra = externalLensedCMBSpectra,
+                                                        externalLensingSpectra = externalLensingSpectra,
+                                                        classExecDir = classExecDir,
+                                                        classDataDir = classDataDir,
+                                                        calculateDerivatives = calculateDerivatives,
+                                                        includeUnlensedSpectraDerivatives = includeUnlensedSpectraDerivatives,
+                                                        outputAllReconstructions = outputAllReconstructions,
+                                                        reconstructionMask = reconstructionMask,
+                                                        lmax = lmax,
+                                                        extraParams = extraParams)
+        powersFid['unlensed'] = cambPowerSpectra['unlensed']
+        powersFid['lensing'] = cambPowerSpectra['lensing']
+        return powersFid, deflectionNoises
+    else:
+        return class_generate_data(cosmo = cosmo,
+                                    rootName = rootName,
+                                    cmbNoise = cmbNoise,
+                                    noiseLevel = noiseLevel,
+                                    beamSizeArcmin = beamSizeArcmin,
+                                    deflectionNoise = deflectionNoise,
+                                    externalUnlensedCMBSpectra = externalUnlensedCMBSpectra,
+                                    externalLensedCMBSpectra = externalLensedCMBSpectra,
+                                    externalLensingSpectra = externalLensingSpectra,
+                                    classExecDir = classExecDir,
+                                    classDataDir = classDataDir,
+                                    calculateDerivatives = calculateDerivatives,
+                                    includeUnlensedSpectraDerivatives = includeUnlensedSpectraDerivatives,
+                                    outputAllReconstructions = outputAllReconstructions,
+                                    reconstructionMask = reconstructionMask,
+                                    lmax = lmax,
+                                    extraParams = extraParams)
+
+def generate_data(cosmo,
+                        rootName = 'testing',
+                        cmbNoise = None,
+                        noiseLevel = 1.,
+                        beamSizeArcmin = 1.,
+                        deflectionNoise = None,
+                        externalUnlensedCMBSpectra = None,
+                        externalLensedCMBSpectra = None,
+                        externalLensingSpectra = None,
+                        classExecDir = os.path.dirname(os.path.abspath(__file__)) + '/CLASS_delens/',
+                        classDataDir = os.path.dirname(os.path.abspath(__file__)) + '/CLASS_delens/',
+                        calculateDerivatives = False,
+                        includeUnlensedSpectraDerivatives = False,
+                        outputAllReconstructions = False,
+                        reconstructionMask = None,
+                        lmax = 5000,
+                        extraParams = dict(),
+                        accuracy = 2,
+                        useClass = True):
+
+    if useClass == True:
+        return class_generate_data(cosmo,
+                        rootName = rootName,
+                        cmbNoise = cmbNoise,
+                        noiseLevel = noiseLevel,
+                        beamSizeArcmin = beamSizeArcmin,
+                        deflectionNoise = deflectionNoise,
+                        externalUnlensedCMBSpectra = externalUnlensedCMBSpectra,
+                        externalLensedCMBSpectra = externalLensedCMBSpectra,
+                        externalLensingSpectra = externalLensingSpectra,
+                        classExecDir = classExecDir,
+                        classDataDir = classDataDir,
+                        calculateDerivatives = calculateDerivatives,
+                        includeUnlensedSpectraDerivatives = includeUnlensedSpectraDerivatives,
+                        outputAllReconstructions = outputAllReconstructions,
+                        reconstructionMask = reconstructionMask,
+                        lmax = lmax,
+                        extraParams = extraParams
+                        )
+
+    elif useClass == False:
+        cambPowerSpectra = cambWrapTools.getPyCambPowerSpectra(cosmo = cosmo, \
+                                                        accuracy = accuracy, \
+                                                        lmaxToWrite = lmax+3000)
+
+        if calculateDerivatives == False:
+            powersFid, deflectionNoises = class_generate_data(cosmo = cosmo,
+                                                            rootName = rootName,
+                                                            cmbNoise = cmbNoise,
+                                                            noiseLevel = noiseLevel,
+                                                            beamSizeArcmin = beamSizeArcmin,
+                                                            deflectionNoise = deflectionNoise,
+                                                            externalUnlensedCMBSpectra = externalUnlensedCMBSpectra,
+                                                            externalLensedCMBSpectra = externalLensedCMBSpectra,
+                                                            externalLensingSpectra = externalLensingSpectra,
+                                                            classExecDir = classExecDir,
+                                                            classDataDir = classDataDir,
+                                                            calculateDerivatives = calculateDerivatives,
+                                                            includeUnlensedSpectraDerivatives = includeUnlensedSpectraDerivatives,
+                                                            outputAllReconstructions = outputAllReconstructions,
+                                                            reconstructionMask = reconstructionMask,
+                                                            lmax = lmax,
+                                                            extraParams = extraParams)
+            powersFid['unlensed'] = cambPowerSpectra['unlensed']
+            powersFid['lensing'] = cambPowerSpectra['lensing']
+            return powersFid, deflectionNoises
+        else:
+            return class_generate_data(cosmo = cosmo,
+                                        rootName = rootName,
+                                        cmbNoise = cmbNoise,
+                                        noiseLevel = noiseLevel,
+                                        beamSizeArcmin = beamSizeArcmin,
+                                        deflectionNoise = deflectionNoise,
+                                        externalUnlensedCMBSpectra = externalUnlensedCMBSpectra,
+                                        externalLensedCMBSpectra = externalLensedCMBSpectra,
+                                        externalLensingSpectra = externalLensingSpectra,
+                                        classExecDir = classExecDir,
+                                        classDataDir = classDataDir,
+                                        calculateDerivatives = calculateDerivatives,
+                                        includeUnlensedSpectraDerivatives = includeUnlensedSpectraDerivatives,
+                                        outputAllReconstructions = outputAllReconstructions,
+                                        reconstructionMask = reconstructionMask,
+                                        lmax = lmax,
+                                        extraParams = extraParams)
 
 def loadLensingDerivatives(rootName = 'testing',
                            classDataDir = os.path.dirname(os.path.abspath(__file__)) + '/../../CLASS_delens/',
