@@ -75,6 +75,10 @@ def class_generate_data(cosmo,
         if 'n_t' in list(cosmo.keys()):
             cosmoclass['n_t'] = cosmo['n_t']
 
+    ## spectral running
+    if 'alpha_s' in list(cosmo.keys()):
+        cosmoclass['alpha_s'] = cosmo['alpha_s']
+
 
     ## isocurvature parameters
 
@@ -576,9 +580,9 @@ def camb_class_generate_data(cosmo,
                                                         noiseLevel = noiseLevel,
                                                         beamSizeArcmin = beamSizeArcmin,
                                                         deflectionNoise = deflectionNoise,
-                                                        externalUnlensedCMBSpectra = externalUnlensedCMBSpectra,
+                                                        externalUnlensedCMBSpectra = cambPowerSpectra['unlensed'],
                                                         externalLensedCMBSpectra = externalLensedCMBSpectra,
-                                                        externalLensingSpectra = externalLensingSpectra,
+                                                        externalLensingSpectra = cambPowerSpectra['lensing'],
                                                         classExecDir = classExecDir,
                                                         classDataDir = classDataDir,
                                                         calculateDerivatives = calculateDerivatives,
@@ -588,6 +592,9 @@ def camb_class_generate_data(cosmo,
                                                         lmax = lmax,
                                                         extraParams = extraParams)
         powersFid['unlensed'] = cambPowerSpectra['unlensed']
+        ## Temporary line to use CAMB lensed spectra ##
+        powersFid['lensed'] = cambPowerSpectra['lensed']
+        ####
         powersFid['lensing'] = cambPowerSpectra['lensing']
         return powersFid, deflectionNoises
     else:
@@ -597,9 +604,9 @@ def camb_class_generate_data(cosmo,
                                     noiseLevel = noiseLevel,
                                     beamSizeArcmin = beamSizeArcmin,
                                     deflectionNoise = deflectionNoise,
-                                    externalUnlensedCMBSpectra = externalUnlensedCMBSpectra,
+                                    externalUnlensedCMBSpectra = cambPowerSpectra['unlensed'],
                                     externalLensedCMBSpectra = externalLensedCMBSpectra,
-                                    externalLensingSpectra = externalLensingSpectra,
+                                    externalLensingSpectra = cambPowerSpectra['lensing'],
                                     classExecDir = classExecDir,
                                     classDataDir = classDataDir,
                                     calculateDerivatives = calculateDerivatives,
