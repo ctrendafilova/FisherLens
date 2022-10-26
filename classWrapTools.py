@@ -594,7 +594,7 @@ def camb_class_generate_data(cosmo,
                                                         extraParams = extraParams)
         powersFid['unlensed'] = cambPowerSpectra['unlensed']
         ## If you want to use the lensed spectra from CAMB
-        if doLensedWithCAMB = True:
+        if doLensedWithCAMB == True:
             powersFid['lensed'] = cambPowerSpectra['lensed']
         powersFid['lensing'] = cambPowerSpectra['lensing']
         return powersFid, deflectionNoises
