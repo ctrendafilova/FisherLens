@@ -54,47 +54,19 @@ rs_dV_relative_errors = numpy.asarray([1.89, 1.26, 0.98, 0.80, 0.68, 0.60, 0.52,
 #rs_dV_errors = numpy.array([0.0084, 0.015, 0.0023, 0.00071])
 
 cosmoParams = list(cosmoFid.keys())
-# BAOPlus = dict()
-# BAOMinus = dict()
 
 BAOFid = cambWrapTools.getBAOParams(cosmoFid, redshifts)
 
 rs_dV_errors = BAOFid[:,0]*rs_dV_relative_errors
 
-
-# for cp in cosmoParams:
-#     cosmoPlus = cosmoFid.copy()
-#     cosmoMinus = cosmoFid.copy()
-#     cosmoPlus[cp] = cosmoPlus[cp] + stepSizes[cp]
-#     if cp != 'fmcdm':
-#         cosmoMinus[cp] = cosmoMinus[cp] - stepSizes[cp]
-#     BAOPlus[cp] = cambWrapTools.getBAOParams(cosmoPlus, redshifts)
-#     BAOMinus[cp] = cambWrapTools.getBAOParams(cosmoMinus, redshifts)
-
-# paramDerivs = dict()
-# for cosmo in cosmoParams:
-#     paramDerivs[cosmo] = dict()
-#     if cosmo != 'fmcdm':
-#         denom = 2 * stepSizes[cosmo]
-#     else:
-#         denom = stepSizes[cosmo]
-#     paramDerivs[cosmo]['BAO'] = (BAOPlus[cosmo][:,0] - BAOMinus[cosmo][:,0]) / denom
-
 paramDerivs = fisherTools.getParamDerivsBAOandH0(cosmoFid, stepSizes, redshifts)
-secondDerivs = fisherTools.getSecondDerivsBAOandH0(cosmoFid, stepSizes, redshifts)
 
 nPars = len(cosmoParams)
 fisherBAO = numpy.zeros((nPars,nPars))
-DALI3BAO = numpy.zeros((nPars,nPars,nPars))
-DALI4BAO = numpy.zeros((nPars,nPars,nPars,nPars))
 
 for cp1, cosmo1 in enumerate(cosmoParams):
     for cp2, cosmo2 in enumerate(cosmoParams):
         fisherBAO[cp1,cp2] = sum(paramDerivs[cosmo1]['BAO'] * paramDerivs[cosmo2]['BAO']/(rs_dV_errors * rs_dV_errors))
-        for cp3, cosmo3 in enumerate(cosmoParams):
-            DALI3BAO[cp1,cp2,cp3] = sum(secondDerivs[cosmo1][cosmo2]['BAO'] * paramDerivs[cosmo3]['BAO']/(rs_dV_errors * rs_dV_errors))
-            for cp4, cosmo4 in enumerate(cosmoParams):
-                DALI4BAO[cp1,cp2,cp3,cp4] = sum(secondDerivs[cosmo1][cosmo2]['BAO'] * secondDerivs[cosmo3][cosmo4]['BAO']/(rs_dV_errors * rs_dV_errors))
 
 header = ' '
 for cp, cosmo in enumerate(cosmoParams):
@@ -102,12 +74,3 @@ for cp, cosmo in enumerate(cosmoParams):
 
 numpy.savetxt(outputDir + fileBase + '_Fisher.txt', fisherBAO, header = header)
 numpy.savetxt(outputDir + fileBase + 'rsdV.txt', BAOFid)
-
-# pickle including DALI terms
-BAOData = dict()
-BAOData['fisher'] = fisherBAO
-BAOData['DALI3'] = DALI3BAO
-BAOData['DALI4'] = DALI4BAO
-BAOOutput = open(outputDir + fileBase + '_DALI.pkl', 'wb')
-pickle.dump(BAOData, BAOOutput, -1)
-BAOOutput.close()
