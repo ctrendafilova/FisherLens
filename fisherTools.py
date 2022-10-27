@@ -194,6 +194,7 @@ def getPowerDerivWithParams(cosmoFid, stepSizes, polCombs, cmbNoiseSpectraK, def
                             fileNameBase = 'testing', paramsToDifferentiate = None,
                             accuracy = 2.,
                             useClass = False,
+                            doLensedWithCAMB = False,
                             classExecDir = os.path.dirname(os.path.abspath(__file__)) + '/../../CLASS_delens/',
                             classDataDir = os.path.dirname(os.path.abspath(__file__)) + '/../../CLASS_delens/',
                             extraParams = dict()):
@@ -245,7 +246,8 @@ def getPowerDerivWithParams(cosmoFid, stepSizes, polCombs, cmbNoiseSpectraK, def
                         classDataDir = classDataDir,
                         lmax = lmax,
                         extraParams = extraParams,
-                        accuracy = accuracy)
+                        accuracy = accuracy,
+                        doLensedWithCAMB = doLensedWithCAMB)
 
 
         #### For one-sided derivatives, use fiducial parameters for PowersMinus
@@ -277,7 +279,8 @@ def getPowerDerivWithParams(cosmoFid, stepSizes, polCombs, cmbNoiseSpectraK, def
                         classDataDir = classDataDir,
                         lmax = lmax,
                         extraParams = extraParams,
-                        accuracy = accuracy)
+                        accuracy = accuracy,
+                        doLensedWithCAMB = doLensedWithCAMB)
 
 
     #PARAM DERIVATIVES
@@ -906,6 +909,7 @@ def getSecondPowerDerivWithParams(cosmoFid, stepSizes, polCombs, cmbNoiseSpectra
                             fileNameBase = 'testing', paramsToDifferentiate = None,
                             accuracy = 2.,
                             useClass = False,
+                            doLensedWithCAMB = False,
                             classExecDir = os.path.dirname(os.path.abspath(__file__)) + '/../../CLASS_delens/',
                             classDataDir = os.path.dirname(os.path.abspath(__file__)) + '/../../CLASS_delens/',
                             extraParams = dict()):
@@ -938,6 +942,7 @@ def getSecondPowerDerivWithParams(cosmoFid, stepSizes, polCombs, cmbNoiseSpectra
                         paramsToDifferentiate = paramsToDifferentiate,
                         accuracy = accuracy,
                         useClass = useClass,
+                        doLensedWithCAMB = doLensedWithCAMB,
                         classExecDir = classExecDir,
                         classDataDir = classDataDir,
                         extraParams = extraParams)
@@ -954,6 +959,7 @@ def getSecondPowerDerivWithParams(cosmoFid, stepSizes, polCombs, cmbNoiseSpectra
                         paramsToDifferentiate = paramsToDifferentiate,
                         accuracy = accuracy,
                         useClass = useClass,
+                        doLensedWithCAMB = doLensedWithCAMB,
                         classExecDir = classExecDir,
                         classDataDir = classDataDir,
                         extraParams = extraParams)
