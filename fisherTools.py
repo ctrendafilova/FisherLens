@@ -203,7 +203,13 @@ def getPowerDerivWithParams(cosmoFid, stepSizes, polCombs, cmbNoiseSpectraK, def
 
 
     nParams = len(paramsToDifferentiate)
+
     oneSidedParams = ['DM_Pann']
+
+    if 'mnu' in cosmoFid.keys():
+        if cosmoFid['mnu'] < stepSizes['mnu']:
+            oneSidedParams.append('mnu')
+
     oneSidedParamsIso = ['c_ad_cdi', 'c_ad_bi', 'c_ad_nid', 'c_ad_niv', \
                         'c_bi_cdi', 'c_bi_nid', 'c_bi_niv', \
                         'c_cdi_nid', 'c_cdi_niv', \
@@ -323,6 +329,9 @@ def getParamDerivsBAOandH0(cosmoFid, stepSizes, redshifts, paramsToDifferentiate
         paramsToDifferentiate = list(cosmoFid.keys())
     nParams = len(paramsToDifferentiate)
     oneSidedParams = ['DM_Pann']
+    if 'mnu' in cosmoFid.keys():
+        if cosmoFid['mnu'] < stepSizes['mnu']:
+            oneSidedParams.append('mnu')
     for cosmo in paramsToDifferentiate:
         print(('getting deriv w.r.t. %s' %cosmo))
         cosmoPlus = cosmoFid.copy() #copy all params including those not being perturbed.
@@ -358,6 +367,9 @@ def getSecondDerivsBAOandH0(cosmoFid, stepSizes, redshifts, paramsToDifferentiat
         paramsToDifferentiate = list(cosmoFid.keys())
     nParams = len(paramsToDifferentiate)
     oneSidedParams = ['DM_Pann']
+    if 'mnu' in cosmoFid.keys():
+        if cosmoFid['mnu'] < stepSizes['mnu']:
+            oneSidedParams.append('mnu')
     for cosmo in paramsToDifferentiate:
         print('getting second deriv w.r.t. %s' %cosmo)
         cosmoPlus = cosmoFid.copy() #copy all params including those not being perturbed.
@@ -618,6 +630,7 @@ def getNonGaussianCov(powersFid, \
                 if polComb1 == 'cl_dd' and polComb2 == 'cl_dd':
                     ## Avoid double counting on-diagonal covariance for deflection power
                     cov[polComb1][polComb2] += 0.
+
                 else:
                     cov[polComb1][polComb2] += numpy.tensordot(dCldCLd[polComb1][2:lmax+1,2:lmax+1], \
                                                 numpy.tensordot(numpy.diag(deflCov), dCldCLd[polComb2][2:lmax+1,2:lmax+1], axes = (1,1)), axes = (1,0))
@@ -903,6 +916,9 @@ def getSecondPowerDerivWithParams(cosmoFid, stepSizes, polCombs, cmbNoiseSpectra
 
     nParams = len(paramsToDifferentiate)
     oneSidedParams = ['DM_Pann']
+    if 'mnu' in cosmoFid.keys():
+        if cosmoFid['mnu'] < stepSizes['mnu']:
+            oneSidedParams.append('mnu')
 
     derivsPlus = dict()
     derivsMinus = dict()
@@ -944,7 +960,11 @@ def getSecondPowerDerivWithParams(cosmoFid, stepSizes, polCombs, cmbNoiseSpectra
 
 
     #PARAM DERIVATIVES
-    secondDerivs = fourdDict(paramsToDifferentiate, paramsToDifferentiate, spectrumTypes, polCombs)
+    polCombsTemp = polCombs.copy()
+    if 'cl_dd' in polCombs:
+        polCombsTemp.remove('cl_dd')
+    #PARAM DERIVATIVES
+    secondDerivs = fourdDict(paramsToDifferentiate, paramsToDifferentiate, spectrumTypes, polCombsTemp)
 
     for  cosmo1 in paramsToDifferentiate:
 
@@ -958,19 +978,23 @@ def getSecondPowerDerivWithParams(cosmoFid, stepSizes, polCombs, cmbNoiseSpectra
 
         for cosmo2 in paramsToDifferentiate:
             for pc, polComb in enumerate(polCombs):
-                if 'unlensed' in spectrumTypes:
-                    secondDerivs[cosmo1][cosmo2]['unlensed'][polComb] = \
-                        (derivsPlus[cosmo1][cosmo2]['unlensed'][polComb] - derivsMinus[cosmo1][cosmo2]['unlensed'][polComb]) / denom
-                if 'lensed' in spectrumTypes:
-                    secondDerivs[cosmo1][cosmo2]['lensed'][polComb] = \
-                        (derivsPlus[cosmo1][cosmo2]['lensed'][polComb] - derivsMinus[cosmo1][cosmo2]['lensed'][polComb]) / denom
-                if 'delensed' in spectrumTypes:
-                    secondDerivs[cosmo1][cosmo2]['delensed'][polComb] = \
-                        (derivsPlus[cosmo1][cosmo2]['delensed'][polComb] - derivsMinus[cosmo1][cosmo2]['delensed'][polComb]) / denom
-            if 'lensing' in spectrumTypes:
-                secondDerivs[cosmo1][cosmo2]['lensing'] = dict()
-                secondDerivs[cosmo1][cosmo2]['lensing']['cl_dd'] = \
-                    (derivsPlus[cosmo1][cosmo2]['lensing']['cl_dd'] - derivsMinus[cosmo1][cosmo2]['lensing']['cl_dd']) / denom
+                if polComb == 'cl_dd':
+                    if 'lensing' in spectrumTypes:
+                        secondDerivs[cosmo1][cosmo2]['lensing'] = dict()
+                        secondDerivs[cosmo1][cosmo2]['lensing']['cl_dd'] = \
+                            (derivsPlus[cosmo1][cosmo2]['lensing']['cl_dd'] - derivsMinus[cosmo1][cosmo2]['lensing']['cl_dd']) / denom
+                    else:
+                        print('lensing must be in spectrum types to calculate cl_dd second derivatives.')
+                else:
+                    if 'unlensed' in spectrumTypes:
+                        secondDerivs[cosmo1][cosmo2]['unlensed'][polComb] = \
+                            (derivsPlus[cosmo1][cosmo2]['unlensed'][polComb] - derivsMinus[cosmo1][cosmo2]['unlensed'][polComb]) / denom
+                    if 'lensed' in spectrumTypes:
+                        secondDerivs[cosmo1][cosmo2]['lensed'][polComb] = \
+                            (derivsPlus[cosmo1][cosmo2]['lensed'][polComb] - derivsMinus[cosmo1][cosmo2]['lensed'][polComb]) / denom
+                    if 'delensed' in spectrumTypes:
+                        secondDerivs[cosmo1][cosmo2]['delensed'][polComb] = \
+                            (derivsPlus[cosmo1][cosmo2]['delensed'][polComb] - derivsMinus[cosmo1][cosmo2]['delensed'][polComb]) / denom
 
     return secondDerivs
 
