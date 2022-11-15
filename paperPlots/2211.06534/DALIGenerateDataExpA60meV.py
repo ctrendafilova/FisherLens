@@ -31,8 +31,8 @@ lmax_calc = lmax+lbuffer
 
 expNamesThisNode = numpy.array_split(numpy.asarray(expNames), size)[rank]
 
-classExecDir = '~/code/class_delens-master/'
-classDataDir = '/scratch/users/ctrendafilova/CLASS/'
+classExecDir = './CLASS_delens/'
+classDataDir = './CLASS_delens/'
 outputDir = classDataDir + 'results/'
 
 classDataDirThisNode = classDataDir + 'data/Node_' + str(rank) + '/'
@@ -191,10 +191,10 @@ for k in expNamesThisNode:
                             fileNameBase = fileBaseThisNode, \
                             classExecDir = classExecDir, \
                             classDataDir = classDataDirThisNode)
-                            
+
     if doDALI is True:
         print(( 'Node ' + str(rank) + ' calculating second derivatives for experiment ' + str(expName)))
-                                
+
         secondDerivs[k] = fisherTools.getSecondPowerDerivWithParams(cosmoFid = cosmoFid, \
                                 stepSizes = stepSizes, \
                                 polCombs = polCombs, \
@@ -216,9 +216,9 @@ for k in expNamesThisNode:
                             spectrumTypes = ['unlensed', 'lensed', 'delensed'], \
                             polCombsToUse = polCombs, \
                             ellsToUse = ellsToUse)
-                            
+
     if doDALI is True:
-                            
+
         DALI3Gaussian[k], DALI4Gaussian[k] = fisherTools.getGaussianDoubletDALI(powersFid = powersFid[k], \
                                 paramDerivs = paramDerivs[k], \
                                 secondDerivs = secondDerivs[k], \
@@ -280,7 +280,7 @@ for k in expNamesThisNode:
                                         cosmoParams = cosmoParams, \
                                         ellsToUse = ellsToUseNG, \
                                         polCombsToUse = polCombs, \
-                                        spectrumType = 'delensed')    
+                                        spectrumType = 'delensed')
 
         if rank != size-1 and dCldCLd_lensed is None:
             classDataDirLastNode = classDataDir + 'data/Node_' + str(size-1) + '/'
@@ -318,7 +318,7 @@ for k in expNamesThisNode:
                                     cosmoParams = cosmoParams)
 
         if doDALI is True:
-        
+
             invCovDotSecondDerivs_lensed[k], secondDerivStack_lensed[k] = fisherTools.choleskyInvCovDotSecondDerivsNG(powersFid = powersFid[k], \
                                 cmbNoiseSpectra = cmbNoiseSpectra[k], \
                                 deflectionNoiseSpectra = deflectionNoises[k], \
@@ -329,17 +329,17 @@ for k in expNamesThisNode:
                                 ellsToUse = ellsToUseNG, \
                                 polCombsToUse = polCombs, \
                                 spectrumType = 'lensed')
-                                    
+
             DALI3NonGaussian_delensed[k], DALI4NonGaussian_delensed[k] = fisherTools.getNonGaussianDoubletDALI(invCovDotParamDerivs = invCovDotParamDerivs_delensed[k], \
                                         invCovDotSecondDerivs = invCovDotSecondDerivs_delensed[k], \
                                         secondDerivStack = secondDerivStack_delensed[k], \
                                         cosmoParams = cosmoParams)
-                                        
+
             DALI3NonGaussian_lensed[k], DALI4NonGaussian_lensed[k] = fisherTools.getNonGaussianDoubletDALI(invCovDotParamDerivs = invCovDotParamDerivs_lensed[k], \
                                         invCovDotSecondDerivs = invCovDotSecondDerivs_lensed[k], \
                                         secondDerivStack = secondDerivStack_lensed[k], \
                                         cosmoParams = cosmoParams)
-                                    
+
 
 print('Node ' + str(rank) + ' finished all experiments')
 
