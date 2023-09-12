@@ -499,23 +499,32 @@ def class_generate_data(cosmo,
         deflection_noise['MV'] = None
 
         if deflectionNoise is None:
-            nl_dd_MV = cspec['nl_lensing'][:nElls,1]*2.*np.pi
-            nl_dd_TT = cspec['nl_lensing'][:nElls,2]*2.*np.pi
-            nl_dd_TE = cspec['nl_lensing'][:nElls,3]*2.*np.pi
-            nl_dd_EE = cspec['nl_lensing'][:nElls,4]*2.*np.pi
-            nl_dd_BB = cspec['nl_lensing'][:nElls,5]*2.*np.pi
-            nl_dd_EB = cspec['nl_lensing'][:nElls,6]*2.*np.pi
-            nl_dd_TB = cspec['nl_lensing'][:nElls,7]*2.*np.pi
+            if dcode['min_varr_type'] == 'diag':
+                nl_dd_MV = cspec['nl_lensing'][:nElls,1]*2.*np.pi
+                nl_dd_TT = cspec['nl_lensing'][:nElls,2]*2.*np.pi
+                nl_dd_TE = cspec['nl_lensing'][:nElls,3]*2.*np.pi
+                nl_dd_EE = cspec['nl_lensing'][:nElls,4]*2.*np.pi
+                nl_dd_BB = cspec['nl_lensing'][:nElls,5]*2.*np.pi
+                nl_dd_EB = cspec['nl_lensing'][:nElls,6]*2.*np.pi
+                nl_dd_TB = cspec['nl_lensing'][:nElls,7]*2.*np.pi
 
-            deflection_noise = {'l' :cspec['nl_lensing'][:nElls,0],
-                            'MV' : nl_dd_MV,
-                            'TT' : nl_dd_TT,
-                            'TE' : nl_dd_TE,
-                            'EE' : nl_dd_EE,
-                            'BB' : nl_dd_BB,
-                            'EB' : nl_dd_EB,
-                            'TB' : nl_dd_TB
-                            }
+                deflection_noise = {'l' :cspec['nl_lensing'][:nElls,0],
+                                'MV' : nl_dd_MV,
+                                'TT' : nl_dd_TT,
+                                'TE' : nl_dd_TE,
+                                'EE' : nl_dd_EE,
+                                'BB' : nl_dd_BB,
+                                'EB' : nl_dd_EB,
+                                'TB' : nl_dd_TB
+                                }
+            elif dcode['min_varr_type'] == 'eb':
+                nl_dd_MV = cspec['nl_lensing'][:nElls,1]*2.*np.pi
+                nl_dd_EB = cspec['nl_lensing'][:nElls,2]*2.*np.pi
+
+                deflection_noise = {'l' :cspec['nl_lensing'][:nElls,0],
+                                'MV' : nl_dd_MV,
+                                'EB' : nl_dd_EB
+                                }
 
         if outputAllReconstructions is False:
             reconstructionOutput = deflection_noise['MV']
