@@ -45,8 +45,14 @@ def getPyCambPowerSpectra(cosmo, accuracy = 2, lmaxToWrite = None):
     pars.InitPower.set_params(As = cosmo['A_s'], ns = cosmo['n_s'])
 
     if 'r' in list(cosmo.keys()) and cosmo['r'] != 0.:
-        pars.InitPower.set_params(r = cosmo['r'])
         pars.WantTensors = True
+        pars.InitPower.set_params(As = cosmo['A_s'], ns = cosmo['n_s'], r = cosmo['r'])
+    if 'n_t' in list(cosmo.keys()) and cosmo['n_t'] != 0.:
+        pars.WantTensors = True
+        pars.InitPower.set_params(As = cosmo['A_s'], ns = cosmo['n_s'], nt = cosmo['n_t'])
+    if 'r' in list(cosmo.keys()) and 'n_t' in list(cosmo.keys()) and cosmo['r'] != 0. and cosmo['n_t'] != 0.:
+        pars.WantTensors = True
+        pars.InitPower.set_params(As = cosmo['A_s'], ns = cosmo['n_s'], r = cosmo['r'], nt = cosmo['n_t'])
 
     if ('DM_Pann' in list(cosmo.keys()) or 'fine_structure_multiplier' in list(cosmo.keys()) or 'electron_mass_multiplier' in list(cosmo.keys())):
         pars.Recomb.set_params(DM_Pann = cosmo['DM_Pann'] if 'DM_Pann' in list(cosmo.keys()) else 0.0, \
