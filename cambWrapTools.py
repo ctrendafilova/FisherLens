@@ -7,7 +7,8 @@ from camb import model, initialpower
 
 TCMB = 2.7255
 
-def getPyCambPowerSpectra(cosmo, accuracy = 2, lmaxToWrite = None):
+def getPyCambPowerSpectra(cosmo, accuracy = 2, lmaxToWrite = None, wantMatterPower = False, \
+                              redshifts = None):
 
     lmax = lmaxToWrite + 1 if lmaxToWrite>0 else None
 
@@ -45,14 +46,8 @@ def getPyCambPowerSpectra(cosmo, accuracy = 2, lmaxToWrite = None):
     pars.InitPower.set_params(As = cosmo['A_s'], ns = cosmo['n_s'])
 
     if 'r' in list(cosmo.keys()) and cosmo['r'] != 0.:
+        pars.InitPower.set_params(r = cosmo['r'])
         pars.WantTensors = True
-        pars.InitPower.set_params(As = cosmo['A_s'], ns = cosmo['n_s'], r = cosmo['r'])
-    if 'n_t' in list(cosmo.keys()) and cosmo['n_t'] != 0.:
-        pars.WantTensors = True
-        pars.InitPower.set_params(As = cosmo['A_s'], ns = cosmo['n_s'], nt = cosmo['n_t'])
-    if 'r' in list(cosmo.keys()) and 'n_t' in list(cosmo.keys()) and cosmo['r'] != 0. and cosmo['n_t'] != 0.:
-        pars.WantTensors = True
-        pars.InitPower.set_params(As = cosmo['A_s'], ns = cosmo['n_s'], r = cosmo['r'], nt = cosmo['n_t'])
 
     if ('DM_Pann' in list(cosmo.keys()) or 'fine_structure_multiplier' in list(cosmo.keys()) or 'electron_mass_multiplier' in list(cosmo.keys())):
         pars.Recomb.set_params(DM_Pann = cosmo['DM_Pann'] if 'DM_Pann' in list(cosmo.keys()) else 0.0, \
@@ -68,6 +63,11 @@ def getPyCambPowerSpectra(cosmo, accuracy = 2, lmaxToWrite = None):
     if 'w' in list(cosmo.keys()):
         pars.set_dark_energy(w = cosmo['w'])
 
+
+    if redshifts != None and wantMatterPower:
+        pars.set_matter_power(redshifts=redshifts)
+
+        # camb.set_z_outputs(redshifts)
     #calculate results for these parameter
     results = camb.get_results(pars)
 
@@ -137,6 +137,14 @@ def getPyCambPowerSpectra(cosmo, accuracy = 2, lmaxToWrite = None):
     print(pars.H0)
 
     output = {'unlensed' : unlensed, 'lensed' : lensed, 'lensing' : lensing}
+
+    if wantMatterPower:
+
+
+        matter = dict()
+        matter['kh'], matter['zs'], matter['PK'] = results.get_matter_power_spectrum()
+
+        output['matter'] = matter
 
     return output
 
