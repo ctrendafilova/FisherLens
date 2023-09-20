@@ -69,6 +69,7 @@ Additional files
 Additional python files and Jupyter notebooks can be found under paperPlots. These will replicate the CMB results and figures from:
  - https://arxiv.org/abs/2111.15036
  - https://arxiv.org/abs/2211.06534
+ - https://arxiv.org/abs/2307.01662
  
  Please place the utility file `plotTools.py` in the same directory as your Jupyter notebooks. This file provides helper functions for loading and manipulating forecast results.
 
