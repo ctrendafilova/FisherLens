@@ -23,6 +23,7 @@ def class_generate_data(cosmo,
                         outputAllReconstructions = False,
                         reconstructionMask = None,
                         lmax = 5000,
+                        backgroundOnly = False,
                         extraParams = dict()
                         ):
 
@@ -180,6 +181,103 @@ def class_generate_data(cosmo,
         cosmoclass['n_nid_niv'] = cosmo['n_nid_niv']
     if 'alpha_nid_niv' in list(cosmo.keys()):
         cosmoclass['alpha_nid_niv'] = cosmo['alpha_nid_niv']
+
+    ## varying fundamental constants
+    
+    if 'varying_transition_redshift' in list(cosmo.keys()):
+        cosmoclass['varying_fundamental_constants'] = 'instantaneous'
+        cosmoclass['varying_transition_redshift'] = cosmo['varying_transition_redshift']
+    if 'varying_alpha' in list(cosmo.keys()):
+        cosmoclass['varying_fundamental_constants'] = 'instantaneous'
+        cosmoclass['varying_alpha'] = cosmo['varying_alpha']
+    if 'varying_me' in list(cosmo.keys()):
+        cosmoclass['varying_fundamental_constants'] = 'instantaneous'
+        cosmoclass['varying_me'] = cosmo['varying_me']
+    if 'bbn_alpha_sensitivity' in list(cosmo.keys()):
+        cosmoclass['varying_fundamental_constants'] = 'instantaneous'
+        cosmoclass['bbn_alpha_sensitivity'] = cosmo['bbn_alpha_sensitivity']
+    
+    ## EDE-edit
+    
+    if 'f_scf' in list(cosmo.keys()):
+        cosmoclass['f_scf'] = cosmo['f_scf']
+        cosmoclass['Omega_Lambda'] = 0
+        cosmoclass['Omega_fld'] = 0
+        cosmoclass['Omega_scf'] = -1
+        cosmoclass['scf_parameters'] = '1, 1, 1, 1, 1, 0.0'
+        cosmoclass['CC_scf'] = 1
+        cosmoclass['n_scf'] = 3
+        cosmoclass['scf_tuning_index'] = 3
+        cosmoclass['attractor_ic_scf'] = 'no'
+    if 'log10f_scf' in list(cosmo.keys()):
+        cosmoclass['log10f_scf'] = cosmo['log10f_scf']
+        cosmoclass['Omega_Lambda'] = 0
+        cosmoclass['Omega_fld'] = 0
+        cosmoclass['Omega_scf'] = -1
+        cosmoclass['scf_parameters'] = '1, 1, 1, 1, 1, 0.0'
+        cosmoclass['CC_scf'] = 1
+        cosmoclass['n_scf'] = 3
+        cosmoclass['scf_tuning_index'] = 3
+        cosmoclass['attractor_ic_scf'] = 'no'
+    if 'm_scf' in list(cosmo.keys()):
+        cosmoclass['m_scf'] = cosmo['m_scf']
+        cosmoclass['Omega_Lambda'] = 0
+        cosmoclass['Omega_fld'] = 0
+        cosmoclass['Omega_scf'] = -1
+        cosmoclass['scf_parameters'] = '1, 1, 1, 1, 1, 0.0'
+        cosmoclass['CC_scf'] = 1
+        cosmoclass['n_scf'] = 3
+        cosmoclass['scf_tuning_index'] = 3
+        cosmoclass['attractor_ic_scf'] = 'no'
+    if 'log10m_scf' in list(cosmo.keys()):
+        cosmoclass['log10m_scf'] = cosmo['log10m_scf']
+        cosmoclass['Omega_Lambda'] = 0
+        cosmoclass['Omega_fld'] = 0
+        cosmoclass['Omega_scf'] = -1
+        cosmoclass['scf_parameters'] = '1, 1, 1, 1, 1, 0.0'
+        cosmoclass['CC_scf'] = 1
+        cosmoclass['n_scf'] = 3
+        cosmoclass['scf_tuning_index'] = 3
+        cosmoclass['attractor_ic_scf'] = 'no'
+    if 'fEDE' in list(cosmo.keys()):
+        cosmoclass['fEDE'] = cosmo['fEDE']
+        cosmoclass['Omega_Lambda'] = 0
+        cosmoclass['Omega_fld'] = 0
+        cosmoclass['Omega_scf'] = -1
+        cosmoclass['scf_parameters'] = '1, 1, 1, 1, 1, 0.0'
+        cosmoclass['CC_scf'] = 1
+        cosmoclass['n_scf'] = 3
+        cosmoclass['scf_tuning_index'] = 3
+        cosmoclass['attractor_ic_scf'] = 'no'
+    if 'log10z_c' in list(cosmo.keys()):
+        cosmoclass['log10z_c'] = cosmo['log10z_c']
+        cosmoclass['Omega_Lambda'] = 0
+        cosmoclass['Omega_fld'] = 0
+        cosmoclass['Omega_scf'] = -1
+        cosmoclass['scf_parameters'] = '1, 1, 1, 1, 1, 0.0'
+        cosmoclass['CC_scf'] = 1
+        cosmoclass['n_scf'] = 3
+        cosmoclass['scf_tuning_index'] = 3
+        cosmoclass['attractor_ic_scf'] = 'no'
+    if 'thetai_scf' in list(cosmo.keys()):
+        cosmoclass['thetai_scf'] = cosmo['thetai_scf']
+        cosmoclass['Omega_Lambda'] = 0
+        cosmoclass['Omega_fld'] = 0
+        cosmoclass['Omega_scf'] = -1
+        cosmoclass['scf_parameters'] = '1, 1, 1, 1, 1, 0.0'
+        cosmoclass['CC_scf'] = 1
+        cosmoclass['n_scf'] = 3
+        cosmoclass['scf_tuning_index'] = 3
+        cosmoclass['attractor_ic_scf'] = 'no'
+        
+    ## Dark radiation (7.2.2)
+    
+    if 'N_idr' in list(cosmo.keys()):
+        cosmoclass['N_idr'] = cosmo['N_idr']
+    if 'f_idm' in list(cosmo.keys()):
+        cosmoclass['f_idm'] = cosmo['f_idm']
+    if 'Gamma_0_nadm' in list(cosmo.keys()):
+        cosmoclass['Gamma_0_nadm'] = cosmo['Gamma_0_nadm']
 
     ########################################################
     ## the relevant CLASS commands to call delensing code ##
@@ -339,6 +437,16 @@ def class_generate_data(cosmo,
     ## e.g. extraParams['tol_ncdm'] = 1.e-3 sets a precision parameter associated with ncdm
     ## extraParams will overwrite any previously set parameters
 
+    if backgroundOnly is True:
+        cosmoclass['write_background'] = 'yes'
+        cosmoclass['write_thermodynamics'] = 'yes'
+        cosmoclass['thermodynamics_verbose'] = 1
+        dcode['output'] = ''
+        dcode['lensing'] = 'no'
+        dcode['non linear'] = ''
+        calculateDerivatives = False
+        
+    
     dcode.update(extraParams)
 
 ########################################################
@@ -359,7 +467,7 @@ def class_generate_data(cosmo,
 ## Filling the spectra into specific CLASS dict()s.   ##
 ########################################################
 
-    if calculateDerivatives is False:
+    if calculateDerivatives is False and backgroundOnly is False:
 
     ########################################################
     ## the calculated spectra to be filled in whats below ##
@@ -545,9 +653,17 @@ def class_generate_data(cosmo,
             dCldCLu = loadUnlensedSpectraDerivatives(rootName = rootName,
                                classDataDir = classDataDir,
                                dervtype = dervtype)
-
-
-    if calculateDerivatives is False:
+            
+    if backgroundOnly is True:
+        # returns rs/dV for desired redshifts
+        background = np.loadtxt(classDataDir + "output/" + rootName + "_background.dat")
+        thermo = np.loadtxt(classDataDir + "output/" + rootName + "_thermodynamics.dat")
+        thermo_summary = np.loadtxt(classDataDir + "output/" + rootName + "_thermodynamics_summary.dat")
+        output_data = {'background' : background,
+                       'thermo' : thermo,
+                       'thermo_summary' : thermo_summary}
+        output = output_data
+    elif calculateDerivatives is False:
         output = [powers, reconstructionOutput]
     else:
         if includeUnlensedSpectraDerivatives is not False:
@@ -767,3 +883,33 @@ def noiseSpectra(l, noiseLevelT, useSqrt2 = True, beamArcmin = 1.4, beamFile = N
               }
 
     return output
+
+
+def getBAOParams(cosmo,
+                    redshifts,
+                    rootName = 'testing_bao',
+                    classExecDir = os.path.dirname(os.path.abspath(__file__)) + '/CLASS_delens/',
+                    classDataDir = os.path.dirname(os.path.abspath(__file__)) + '/CLASS_delens/',
+                    extraParams = dict(),
+                    ):
+    
+    # returns rs/dV for desired redshifts
+    
+    bg_data = class_generate_data(cosmo = cosmo,
+                        rootName = rootName,
+                        classExecDir = classExecDir,
+                        classDataDir = classDataDir,
+                        backgroundOnly = True,
+                        extraParams = extraParams
+                        )
+    
+    rs = bg_data['thermo_summary'][-1]
+    
+    zs = bg_data['background'][:,0]
+    ang_diam_dist = bg_data['background'][:,5]
+    Hz = bg_data['background'][:,3]
+    c = 1.
+
+    rs_dV = rs/(((c)*zs*((1+zs) ** 2.) * (ang_diam_dist ** 2.) * (Hz ** -1.)) ** (1./3))
+    
+    return np.interp(redshifts,zs[::-1],rs_dV[::-1])
