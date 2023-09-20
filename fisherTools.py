@@ -860,7 +860,7 @@ def getBAOFisher(paramDerivs, rs_dV_errors, cosmoParams):
         for cp2, cosmo2 in enumerate(cosmoParams):
             fisherBAO[cp1,cp2] = sum(paramDerivs[cosmo1] * paramDerivs[cosmo2]/(rs_dV_errors * rs_dV_errors))
 
-    return fisher
+    return fisherBAO
 
 def choleskyInvCovDotParamDerivsNG(powersFid, \
                                 cmbNoiseSpectra, \

@@ -6,7 +6,8 @@ import scipy
 import numpy
 import os 
 
-outputDir = './CLASS_delens/results/'
+outputDir = os.path.dirname(os.path.abspath(__file__)) + '/CLASS_delens/results/'
+classDir = os.path.dirname(os.path.abspath(__file__)) + '/CLASS_delens/'
 if not os.path.exists(outputDir):
     os.makedirs(outputDir)
 fileBase = 'fisher_CLASSBAO_EDE'
@@ -64,37 +65,29 @@ extraParams = dict()
 #extraParams['f_idm'] = 1
 #extraParams['Gamma_0_nadm'] = 0
 
-BAOPlus = dict()
-BAOMinus = dict()
+BAOFid = classWrapTools.getBAOParams(cosmo = cosmoFid,
+                                        redshifts = redshifts,
+                                        rootName = fileBase,
+                                        classExecDir = classDir,
+                                        classDataDir = outputDir,
+                                        extraParams = extraParams
+                                        )
 
-BAOFid = classWrapTools.getBAOParams(cosmoFid, redshifts, extraParams)
-#BAOFid = classWrapTools.getBAOParams(cosmoFid, [0.2], extraParams)
+#print(BAOFid)
 
-print(BAOFid)
+paramDerivs = fisherTools.getBAODerivWithParams(cosmoFid = cosmoFid,
+                                                   stepSizes = stepSizes,
+                                                   redshifts = redshifts,
+                                                   fileNameBase = fileBase,
+                                                   paramsToDifferentiate = cosmoParams,
+                                                   classExecDir = classDir,
+                                                   classDataDir = outputDir,
+                                                   extraParams = extraParams
+                                                   )
 
-for cp in cosmoParams:
-    cosmoPlus = cosmoFid.copy()
-    cosmoMinus = cosmoFid.copy()
-    cosmoPlus[cp] = cosmoPlus[cp] + stepSizes[cp]
-    if cp != 'fmcdm':
-        cosmoMinus[cp] = cosmoMinus[cp] - stepSizes[cp]
-    BAOPlus[cp] = classWrapTools.getBAOParams(cosmoPlus, redshifts, extraParams)
-    BAOMinus[cp] = classWrapTools.getBAOParams(cosmoMinus, redshifts, extraParams)
-
-paramDerivs = dict()
-for cosmo in cosmoParams:
-    paramDerivs[cosmo] = dict()
-    if cosmo != 'fmcdm':
-        denom = 2 * stepSizes[cosmo]
-    else:
-        denom = stepSizes[cosmo]
-    paramDerivs[cosmo]['BAO'] = (BAOPlus[cosmo][:] - BAOMinus[cosmo][:]) / denom
-
-nPars = len(cosmoParams)
-fisherBAO = numpy.zeros((nPars,nPars))
-for cp1, cosmo1 in enumerate(cosmoParams):
-    for cp2, cosmo2 in enumerate(cosmoParams):
-        fisherBAO[cp1,cp2] = sum(paramDerivs[cosmo1]['BAO'] * paramDerivs[cosmo2]['BAO']/(rs_dV_errors * rs_dV_errors))
+fisherBAO = fisherTools.getBAOFisher(paramDerivs = paramDerivs,
+                                       rs_dV_errors = rs_dV_errors,
+                                       cosmoParams = cosmoParams)
 
 header = ' '
 for cp, cosmo in enumerate(cosmoParams):

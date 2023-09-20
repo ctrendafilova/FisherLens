@@ -439,9 +439,11 @@ def class_generate_data(cosmo,
 
     if backgroundOnly is True:
         cosmoclass['write_background'] = 'yes'
+        cosmoclass['write_thermodynamics'] = 'yes'
         cosmoclass['thermodynamics_verbose'] = 1
         dcode['output'] = ''
         dcode['lensing'] = 'no'
+        dcode['non linear'] = ''
         calculateDerivatives = False
         
     
@@ -888,7 +890,7 @@ def getBAOParams(cosmo,
                     rootName = 'testing_bao',
                     classExecDir = os.path.dirname(os.path.abspath(__file__)) + '/CLASS_delens/',
                     classDataDir = os.path.dirname(os.path.abspath(__file__)) + '/CLASS_delens/',
-                    extraParams = dict()
+                    extraParams = dict(),
                     ):
     
     # returns rs/dV for desired redshifts
@@ -899,7 +901,7 @@ def getBAOParams(cosmo,
                         classDataDir = classDataDir,
                         backgroundOnly = True,
                         extraParams = extraParams
-                        ):
+                        )
     
     rs = bg_data['thermo_summary'][-1]
     
@@ -909,8 +911,5 @@ def getBAOParams(cosmo,
     c = 1.
 
     rs_dV = rs/(((c)*zs*((1+zs) ** 2.) * (ang_diam_dist ** 2.) * (Hz ** -1.)) ** (1./3))
-
-    zs.reverse()
-    rs_dV.reverse()
     
-    return np.interp(redshifts,zs,rs_dV)
+    return np.interp(redshifts,zs[::-1],rs_dV[::-1])
