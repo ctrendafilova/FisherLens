@@ -362,6 +362,84 @@ def getParamDerivsBAOandH0(cosmoFid, stepSizes, redshifts, paramsToDifferentiate
 
     return paramDerivs
 
+def getBAODerivWithParams(cosmoFid, stepSizes, redshifts,
+                            fileNameBase = 'testing', 
+                            paramsToDifferentiate = None,
+                            classExecDir = os.path.dirname(os.path.abspath(__file__)) + '/../../CLASS_delens/',
+                            classDataDir = os.path.dirname(os.path.abspath(__file__)) + '/../../CLASS_delens/',
+                            extraParams = dict()):
+
+    if paramsToDifferentiate == None:
+        paramsToDifferentiate = list(cosmoFid.keys())
+
+    nParams = len(paramsToDifferentiate)
+
+    oneSidedParams = ['DM_Pann']
+
+    if 'mnu' in cosmoFid.keys():
+        if cosmoFid['mnu'] < stepSizes['mnu']:
+            oneSidedParams.append('mnu')
+
+    oneSidedParamsIso = ['c_ad_cdi', 'c_ad_bi', 'c_ad_nid', 'c_ad_niv', \
+                        'c_bi_cdi', 'c_bi_nid', 'c_bi_niv', \
+                        'c_cdi_nid', 'c_cdi_niv', \
+                        'c_nid_niv'] #could be + or - 1
+
+    BAOPlus = dict()
+    BAOMinus = dict()
+
+    for cosmo in paramsToDifferentiate:
+        #print(('getting deriv w.r.t. %s' %cosmo))
+        cosmoPlus = cosmoFid.copy() #copy all params including those not being perturbed.
+        cosmoMinus = cosmoFid.copy()
+
+        cosmoPlus[cosmo] = cosmoPlus[cosmo] + stepSizes[cosmo]
+        cosmoMinus[cosmo] = cosmoMinus[cosmo] - stepSizes[cosmo]
+        
+        #### For one-sided derivatives, use fiducial parameters for PowersMinus
+        if cosmo in oneSidedParams:
+            cosmoMinus = cosmoFid.copy()
+
+        #### isocurvature cross-correlation
+        if cosmo in oneSidedParamsIso:
+            if cosmoFid[cosmo] == 1.:
+                cosmoPlus = cosmoFid.copy()
+            elif cosmoFid[cosmo] == -1.:
+                cosmoMinus = cosmoFid.copy()
+
+        BAOPlus[cosmo] = classWrapTools.getBAOParams(cosmo = cosmoPlus,
+                                                        redshifts = redshifts,
+                                                        rootName = fileNameBase,
+                                                        classExecDir = classExecDir,
+                                                        classDataDir = classDataDir,
+                                                        extraParams = extraParams
+                                                        )
+
+        BAOMinus[cosmo] = classWrapTools.getBAOParams(cosmo = cosmoMinus,
+                                                        redshifts = redshifts,
+                                                        rootName = fileNameBase,
+                                                        classExecDir = classExecDir,
+                                                        classDataDir = classDataDir,
+                                                        extraParams = extraParams
+                                                        )
+
+
+    #PARAM DERIVATIVES
+    paramDerivs = onedDict(paramsToDifferentiate)
+    for  cosmo in paramsToDifferentiate:
+        #### Use this for one-sided derivatives (PowersMinus is PowersFid in this case)
+        if cosmo in oneSidedParams or cosmo in oneSidedParamsIso:
+            denom = stepSizes[cosmo]
+        else:
+        #### Other parameters use two-sided derivatives
+            denom = 2 * stepSizes[cosmo]
+        
+        paramDerivs[cosmo] = BAOPlus[cosmo] - BAOMinus[cosmo]
+        
+    return paramDerivs
+
+
+
 def getSecondDerivsBAOandH0(cosmoFid, stepSizes, redshifts, paramsToDifferentiate = None):
     externalData = ['BAO', 'H0']
     derivsPlus = dict()
@@ -771,6 +849,16 @@ def getGaussianCMBFisher(powersFid, paramDerivs, cmbNoiseSpectra, deflectionNois
                                paramDerivArray[cosmo1][spectrumType], invCovs[spectrumType], paramDerivArray[cosmo2][spectrumType])
 
                 fisher[spectrumType][cp1, cp2] = sum(fisherContribs[spectrumType][cosmo1][cosmo2])
+
+    return fisher
+
+def getBAOFisher(paramDerivs, rs_dV_errors, cosmoParams):
+
+    nPars = len(cosmoParams)
+    fisherBAO = numpy.zeros((nPars,nPars))
+    for cp1, cosmo1 in enumerate(cosmoParams):
+        for cp2, cosmo2 in enumerate(cosmoParams):
+            fisherBAO[cp1,cp2] = sum(paramDerivs[cosmo1] * paramDerivs[cosmo2]/(rs_dV_errors * rs_dV_errors))
 
     return fisher
 
@@ -1209,3 +1297,9 @@ def createEllsToUseDict(ellsToUse = None, \
             lmax = ellsToUse[polComb][1]
 
     return ellsToUse, lmax
+
+def is_float(string):
+    try:
+        return float(string)
+    except ValueError:
+        return False
