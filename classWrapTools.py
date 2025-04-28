@@ -891,6 +891,7 @@ def getBAOParams(cosmo,
                     classExecDir = os.path.dirname(os.path.abspath(__file__)) + '/CLASS_delens/',
                     classDataDir = os.path.dirname(os.path.abspath(__file__)) + '/CLASS_delens/',
                     extraParams = dict(),
+                    return_dA_Hz = False,
                     ):
     
     # returns rs/dV for desired redshifts
@@ -909,7 +910,22 @@ def getBAOParams(cosmo,
     ang_diam_dist = bg_data['background'][:,5]
     Hz = bg_data['background'][:,3]
     c = 1.
+    H0 = bg_data['background'][-1,3]*2.99792458e5
 
     rs_dV = rs/(((c)*zs*((1+zs) ** 2.) * (ang_diam_dist ** 2.) * (Hz ** -1.)) ** (1./3))
-    
-    return np.interp(redshifts,zs[::-1],rs_dV[::-1])
+
+
+    if return_dA_Hz:
+        dA_over_rs = ang_diam_dist/rs
+        Hz_rs = Hz*rs
+        rs_over_dV_interp = np.interp(redshifts,zs[::-1],rs_dV[::-1])
+        dA_over_rs_interp = np.interp(redshifts,zs[::-1],dA_over_rs[::-1])
+        Hz_rs_interp = np.interp(redshifts,zs[::-1],rs_dV[::-1])
+        BAO_params = {'Hz_rs' : Hz_rs_interp,
+                      'dA_over_rs' : dA_over_rs_interp,
+                      'rs_over_dV' : rs_over_dV_interp,
+                      'H0' : H0,
+                      'z' : redshifts}
+        return BAO_params
+    else:
+        return np.interp(redshifts,zs[::-1],rs_dV[::-1])

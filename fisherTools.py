@@ -1,5 +1,6 @@
 import os
 from numpy import *
+import pickle
 import numpy
 import scipy
 import scipy.linalg
@@ -365,6 +366,7 @@ def getParamDerivsBAOandH0(cosmoFid, stepSizes, redshifts, paramsToDifferentiate
 def getBAODerivWithParams(cosmoFid, stepSizes, redshifts,
                             fileNameBase = 'testing', 
                             paramsToDifferentiate = None,
+                            return_dA_Hz = False,
                             classExecDir = os.path.dirname(os.path.abspath(__file__)) + '/../../CLASS_delens/',
                             classDataDir = os.path.dirname(os.path.abspath(__file__)) + '/../../CLASS_delens/',
                             extraParams = dict()):
@@ -412,6 +414,7 @@ def getBAODerivWithParams(cosmoFid, stepSizes, redshifts,
                                                         rootName = fileNameBase,
                                                         classExecDir = classExecDir,
                                                         classDataDir = classDataDir,
+                                                        return_dA_Hz = return_dA_Hz,
                                                         extraParams = extraParams
                                                         )
 
@@ -420,9 +423,9 @@ def getBAODerivWithParams(cosmoFid, stepSizes, redshifts,
                                                         rootName = fileNameBase,
                                                         classExecDir = classExecDir,
                                                         classDataDir = classDataDir,
+                                                        return_dA_Hz = return_dA_Hz,
                                                         extraParams = extraParams
                                                         )
-
 
     #PARAM DERIVATIVES
     paramDerivs = onedDict(paramsToDifferentiate)
@@ -433,8 +436,21 @@ def getBAODerivWithParams(cosmoFid, stepSizes, redshifts,
         else:
         #### Other parameters use two-sided derivatives
             denom = 2 * stepSizes[cosmo]
-        
-        paramDerivs[cosmo] = BAOPlus[cosmo] - BAOMinus[cosmo]
+        if return_dA_Hz:
+            paramDerivs[cosmo] = {'z' : BAOPlus[cosmo]['z'] ,\
+                                  'dA_over_rs': (BAOPlus[cosmo]['dA_over_rs'] - BAOMinus[cosmo]['dA_over_rs'])/denom ,\
+                                  'Hz_rs': (BAOPlus[cosmo]['Hz_rs'] - BAOMinus[cosmo]['Hz_rs'])/denom ,\
+                                  'rs_over_dV' : (BAOPlus[cosmo]['rs_over_dV'] - BAOMinus[cosmo]['rs_over_dV'])/denom ,\
+                                  'H0' : (BAOPlus[cosmo]['H0'] - BAOMinus[cosmo]['H0'])/denom ,\
+                                    }
+            # paramDerivs[cosmo] = dict()
+            # for key in BAOPlus:
+            #     if key == 'z':
+            #         paramDerivs[cosmo][key] = BAOPlus[cosmo][key]
+            #     else:
+            #         paramDerivs[cosmo][key] = (BAOPlus[cosmo][key] - BAOMinus[cosmo][key])/denom
+        else:
+            paramDerivs[cosmo] = (BAOPlus[cosmo] - BAOMinus[cosmo])/denom
         
     return paramDerivs
 
@@ -852,6 +868,37 @@ def getGaussianCMBFisher(powersFid, paramDerivs, cmbNoiseSpectra, deflectionNois
 
     return fisher
 
+def getGaussianCMBFisherFromFile(fileName, expNum, \
+                            cosmoParams = None,\
+                            spectrumTypes = ['unlensed', 'lensed', 'delensed'], \
+                            polCombsToUse = ['cl_TT', 'cl_TE', 'cl_EE', 'cl_dd'], \
+                            ellsToUse = None, \
+                            lmax = None):
+
+    with open(fileName, 'rb') as f:
+        data = pickle.load(f, encoding="latin1")
+
+    powersFid = data['powersFid']
+    paramDerivs = data['paramDerivs']
+    cmbNoiseSpectra = data['cmbNoiseSpectra']
+    deflectionNoises = data['deflectionNoises']
+    if cosmoParams == None:
+        cosmoParams = data['cosmoParams']
+
+    k = expNum
+
+    fisher = getGaussianCMBFisher(powersFid = powersFid[k], \
+                            paramDerivs = paramDerivs[k], \
+                            cmbNoiseSpectra = cmbNoiseSpectra[k], \
+                            deflectionNoises = deflectionNoises[k], \
+                            cosmoParams = cosmoParams, \
+                            spectrumTypes = spectrumTypes, \
+                            polCombsToUse = polCombsToUse, \
+                            ellsToUse = ellsToUse,\
+                            lmax = lmax)
+    
+    return fisher
+
 def getBAOFisher(paramDerivs, rs_dV_errors, cosmoParams):
 
     nPars = len(cosmoParams)
@@ -861,6 +908,50 @@ def getBAOFisher(paramDerivs, rs_dV_errors, cosmoParams):
             fisherBAO[cp1,cp2] = sum(paramDerivs[cosmo1] * paramDerivs[cosmo2]/(rs_dV_errors * rs_dV_errors))
 
     return fisherBAO
+
+def getBAOFisherFromFile(fileName, cosmoParams = None, use_dA_Hz = False):
+
+    with open(fileName, 'rb') as f:
+        data = pickle.load(f, encoding="latin1")
+
+    paramDerivs = data['paramDerivs']
+    nPars = len(cosmoParams)
+    fisherBAO = numpy.zeros((nPars,nPars))
+    
+    if use_dA_Hz:
+        Hz_rs_errors = data['Hz_rs_errors']
+        dA_over_rs_errors = data['dA_over_rs_errors']
+        for cp1, cosmo1 in enumerate(cosmoParams):
+            for cp2, cosmo2 in enumerate(cosmoParams):
+                fisherBAO[cp1,cp2] = sum( paramDerivs[cosmo1]['Hz_rs'] * paramDerivs[cosmo2]['Hz_rs'] \
+                                         /(Hz_rs_errors*Hz_rs_errors) )
+                fisherBAO[cp1,cp2] += sum( paramDerivs[cosmo1]['dA_over_rs'] * paramDerivs[cosmo2]['dA_over_rs'] \
+                                         /(dA_over_rs_errors*dA_over_rs_errors) )
+    else:
+        rs_dV_errors = data['rs_dV_errors']
+        if cosmoParams == None:
+            cosmoParams = data['cosmoParams']
+        for cp1, cosmo1 in enumerate(cosmoParams):
+            for cp2, cosmo2 in enumerate(cosmoParams):
+                fisherBAO[cp1,cp2] = sum(paramDerivs[cosmo1]['BAO'] * paramDerivs[cosmo2]['BAO']/(rs_dV_errors * rs_dV_errors))
+
+    return fisherBAO
+
+def getH0FisherFromFile(fileName, H0_error = 0.67, cosmoParams = None):
+
+    with open(fileName, 'rb') as f:
+        data = pickle.load(f, encoding="latin1")
+
+    paramDerivs = data['paramDerivs']
+    nPars = len(cosmoParams)
+    fisherH0 = numpy.zeros((nPars,nPars))
+    
+    for cp1, cosmo1 in enumerate(cosmoParams):
+        for cp2, cosmo2 in enumerate(cosmoParams):
+            fisherH0[cp1,cp2] = sum( paramDerivs[cosmo1]['H0'] * paramDerivs[cosmo2]['H0'] \
+                                     /(H0_error*H0_error) )
+    
+    return fisherH0
 
 def choleskyInvCovDotParamDerivsNG(powersFid, \
                                 cmbNoiseSpectra, \
