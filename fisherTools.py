@@ -434,7 +434,7 @@ def getBAODerivWithParams(cosmoFid, stepSizes, redshifts,
         #### Other parameters use two-sided derivatives
             denom = 2 * stepSizes[cosmo]
         
-        paramDerivs[cosmo] = BAOPlus[cosmo] - BAOMinus[cosmo]
+        paramDerivs[cosmo] = (BAOPlus[cosmo] - BAOMinus[cosmo]) / denom
         
     return paramDerivs
 
